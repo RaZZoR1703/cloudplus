@@ -1,4 +1,36 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cloudplus 8.6 — Presentation Polish</title><link rel="stylesheet" href="style.css"><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script></head><body><nav class="toolbar" aria-label="Управление презентацией"><button id="skip">Пропустить</button><button id="repeat" hidden>Повторить</button><button id="pauseMotion" aria-pressed="false">Пауза</button></nav><details class="settings" id="settings"><summary>Настройки</summary><div class="panel"><h2>Cloudplus · презентация</h2><p class="settingsIntro">Живой технологический квартал</p><h3>Просмотр</h3><div class="grid"><button id="presentation">Повторить пролёт</button><button id="final">К логотипу</button><button id="quality">Качество: сбалансированное</button><button id="captions">Подписи: вкл</button></div><details class="advanced" id="advancedSettings"><summary>Расширенные настройки</summary><h3>Объекты и камера</h3><div class="grid"><button id="headquartersView">Штаб-квартира</button><button id="mode">Свободная камера</button><button id="overview">Весь квартал</button><button id="hq">Центр Cloudplus</button><button id="sales">Центр продаж</button><button id="warehouse">Склад</button><button id="factory">Производство</button><button id="analytics">Аналитика</button><button id="bus">Остановка</button><button id="sedan">Седан</button><button id="crossover">Кроссовер</button><button id="van">Фургон Cloudplus</button><button id="modelSpin">Вращение модели: выкл</button></div><h3>Свет и эффекты</h3><div class="grid"><button id="post">Эффекты: выкл</button><button id="bloom">Свечение: выкл</button><button id="dof">Фокус: выкл</button><button id="reflect">Отражения: выкл</button><button id="shadows">Тени: вкл</button><button id="headlights">Фары: вкл</button><button id="rain">Дождь: вкл</button><button id="variation">Фактура: вкл</button><button id="scale">Масштаб: выкл</button></div><h3>Статистика</h3><small id="perfInfo">Подготовка статистики…</small><small id="viewInfo">Версия 8.6. Демонстрационная сцена. Штаб-квартира — концептуальная архитектура.</small></details><button id="closeSettings" class="close">Закрыть настройки</button></div></details><div id="status" role="status">Загрузка сцены…</div><div id="loadingOverlay"><div class="bootCard"><div class="bootTitle">CLOUD <span>PLUS</span></div><div class="bootTrack"><i id="loadingFill"></i></div><p id="loadingMessage">Подготовка сцены…</p><div class="bootDots"><i></i><i></i><i></i></div><button id="loadingRetry" hidden>Повторить запуск</button></div></div><div id="scaleInfo">1 единица = 1 м · человек 1,75 м
-Полоса 3,5 м · дорога 14 м
-Седан: 4,64 × 1,86 м · колёса Ø 0,72 м
-Фургон: 5,05 × 2,00 м · колёса Ø 0,76 м</div><div class="story" id="story"><small>УЛИЧНЫЙ ПРОЛЁТ · CLOUD PLUS</small><span id="storyText"></span></div><div class="cta" id="cta"><div class="ctaCard"><p>Соединяем процессы. Ускоряем бизнес.</p><a href="https://cloudplus.uz/" target="_blank" rel="noopener noreferrer">Открыть Cloudplus ↗</a><span class="siteHint">cloudplus.uz</span></div></div><script>(()=>{const overlay=document.getElementById('loadingOverlay'),fill=document.getElementById('loadingFill'),message=document.getElementById('loadingMessage'),retry=document.getElementById('loadingRetry'),status=document.getElementById('status');let progress=4,ready=false,failed=false;function stage(v,text){if(ready||failed)return;progress=Math.max(progress,Math.min(99,v));fill.style.width=progress+'%';message.textContent=text}function fail(error){if(failed)return;failed=true;overlay.style.display='grid';overlay.classList.remove('finished');overlay.classList.add('failed');const detail=error&&error.message?error.message:String(error);message.textContent='Ошибка запуска:\n'+detail;status.style.display='block';status.textContent=detail;retry.hidden=false;console.error(error)}function finish(){if(failed||ready)return;ready=true;fill.style.width='100%';message.textContent='Сцена готова';overlay.classList.add('finished');setTimeout(()=>{if(!failed)overlay.style.display='none'},650)}window.CPBoot={stage,fail,finish};retry.onclick=()=>location.reload();window.addEventListener('error',e=>{if(e.error||e.message)fail(e.error||e.message)});window.addEventListener('unhandledrejection',e=>fail(e.reason));stage(4,'Подготовка интерфейса…')})();</script><script type="module" src="main.js"></script></body></html>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloudplus — бизнес, который работает сам</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <canvas id="scene" aria-label="3D-город Cloudplus"></canvas>
+
+  <div class="brand">Cloudplus</div>
+
+  <div class="controls" role="group" aria-label="Время суток">
+    <button id="play" aria-pressed="true">Пауза</button>
+    <label class="time">
+      <span id="clock">10:00</span>
+      <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.42" aria-label="Время суток">
+    </label>
+    <select id="quality" aria-label="Качество">
+      <option value="auto">Качество: авто</option>
+      <option value="0">Экономное</option>
+      <option value="1">Сбалансированное</option>
+      <option value="2">Высокое</option>
+    </select>
+  </div>
+
+  <pre id="hud" aria-live="off"></pre>
+  <div id="loading">Загрузка сцены…</div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

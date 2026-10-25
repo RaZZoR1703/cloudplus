@@ -1,19 +1,25 @@
 # Cloudplus — 3D-презентация
 
-Рекламная 3D-презентация «Cloudplus» на Three.js.
+«Бизнес, который работает сам»: город-миниатюра, где каждое здание — отдел компании, а Cloudplus связывает их в одну систему. Three.js + Vite.
 
-- `index.html` — разметка и интерфейс
-- `style.css` — стили
-- `main.js` — сцена, камера, анимация
-- `assets/textures/` — текстуры материалов
-- `assets/models/` — 3D-модели машин (GLB)
+- Сайт: https://razzor1703.github.io/cloudplus/
+- Старая версия 8.6: https://razzor1703.github.io/cloudplus/v8/
 
-## Запуск у себя
+## Структура
 
-Двойной клик по `index.html` не сработает: браузер не грузит модули и текстуры с диска. Нужен локальный сервер:
+- `index.html`, `src/style.css` — интерфейс
+- `src/main.js` — рендер, камера, цикл, HUD
+- `src/scene/lighting.js` — небо, солнце/луна, смена дня и ночи
+- `src/scene/city.js` — город (этап 1: заглушки вместо моделей)
+- `src/scene/facade.js` — шейдер окон для фасадов
+- `src/quality.js` — уровни качества и авто-подстройка
+- `public/v8/` — старая версия 8.6 без изменений
+
+## Запуск
 
 ```bash
-python3 -m http.server 8000
+npm install
+npm run dev
 ```
 
-Затем откройте http://localhost:8000
+Публикация автоматическая: каждый push в `main` собирает сайт и выкладывает его на GitHub Pages.
