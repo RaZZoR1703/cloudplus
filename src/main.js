@@ -155,8 +155,8 @@ function step(dt) {
   camera.getWorldDirection(forward);
   focus.copy(camera.position).addScaledVector(forward.setY(0).normalize(), 40).setY(0);
   const light = lighting.update(t, focus);
-  city.update(light);
-  traffic.update(dt, light.night);
+  city.update(light, tourTime);
+  traffic.update(tourTime, light.night, camera.position);
   bloom.strength = .35 * light.night;
 }
 

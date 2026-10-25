@@ -7,10 +7,11 @@ import { createLogo } from './logo.js';
 
 // Street plan, metres. The boulevard runs along X; the industrial street runs north (-Z) at x = 90.
 export const PLAN = {
-  boulevard: { x0: -230, x1: 230, half: 8 },          // carriageway z in [-8, 8]
+  // Streets run on into the fog, so traffic enters and leaves out of sight.
+  boulevard: { x0: -760, x1: 760, half: 8 },          // carriageway z in [-8, 8]
   walk: 6,                                              // sidewalk width
-  industrial: { x: 90, half: 6, z0: -230 },             // carriageway x in [84, 96]
-  logo: new THREE.Vector3(-3, 0, -32),
+  industrial: { x: 90, half: 6, z0: -760 },             // carriageway x in [84, 96]
+  logo: new THREE.Vector3(-3, 12, -24),                // floats above the plaza, as in v8
   supermarket: { x0: -165, x1: -95, z0: -80, z1: -44 },
   hq: { x0: -20, x1: 14, z0: -84, z1: -58, h: 74 },
   warehouse: { x0: 24, x1: 62, z0: -136, z1: -58, h: 11 },
@@ -141,7 +142,7 @@ export async function createCity(scene) {
   const addBox = (m, w, h, d, x, y, z) => batch.add(m, box(w, h, d, tile(m), x, y, z));
 
   // ---- Ground, roads, sidewalks ----
-  flat.add(M.ground, slab(-400, 400, -400, 400, -.02, tile(M.ground)));
+  flat.add(M.ground, slab(-900, 900, -900, 900, -.02, tile(M.ground)));
   flat.add(M.asphalt, slab(B.x0, B.x1, -B.half, B.half, .01, tile(M.asphalt)));
   flat.add(M.asphalt, slab(I.x - I.half, I.x + I.half, I.z0, -B.half, .01, tile(M.asphalt)));
   for (const s of [-1, 1]) {
@@ -165,7 +166,7 @@ export async function createCity(scene) {
   }
   for (let z = -20; z > I.z0; z -= 9) marks.push(place(I.x, .03, z, 0, [.14, .02, 4.5]));
   for (let k = -6; k <= 6; k++) marks.push(place(I.x + k * .9, .03, -FRONT - 3, 0, [.5, .02, 4]));
-  for (let k = -5; k <= 5; k++) marks.push(place(PLAN.logo.x + k * 1.4, .03, 0, 0, [.7, .02, 15]));
+  for (let k = -5; k <= 5; k++) marks.push(place(PLAN.logo.x + k * 1.4, .03, 0, 0, [.7, .02, 15]));   // crosswalk to the plaza
   for (let x = S.x0; x <= S.x1; x += 2.7) marks.push(place(x, .04, -30, 0, [.12, .02, 5.2]), place(x, .04, -40, 0, [.12, .02, 5.2]));
   const markMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1),
     new THREE.MeshStandardMaterial({ color: '#e9e9e4', roughness: .7 }), marks.length);
@@ -215,20 +216,24 @@ export async function createCity(scene) {
     x += w + range(4, 10);
   }
   // North side fillers between the businesses.
-  for (const [a, b] of [[-90, -36], [24, I.x - I.half - W - 2], [176, B.x1 - 12]])
+  for (const [a, b] of [[B.x0 + 4, -172], [-90, -36], [24, I.x - I.half - W - 2], [176, B.x1 - 12]])
     for (let x = a; x < b - 8;) {
       const w = Math.min(range(16, 24), b - x);
       building(x, x + w - .4, -FRONT, range(16, 20), 4.6 + 3.4 * Math.floor(range(3, 7)), pick(shopFacades), 1);
       x += w;
     }
-  building(-230, -170, -FRONT, 22, 22, M.plaster2, 1);
   // Backdrop towers to the north and buildings closing both ends of the boulevard.
   for (let k = 0; k < 26; k++) {
     const x = range(-260, 260), z = range(-260, -150), w = range(20, 34);
     if (x + w > I.x - 14 && x < I.x + 14) continue;      // keep the industrial street clear
     building(x, x + w, z, range(18, 30), range(30, 90), pick(towerFacades), 1, false);
   }
-  for (const end of [-1, 1]) building(end * 236 - 20, end * 236 + 20, 20, 40, 40, M.panels, 1, false);
+  // Both sides of the industrial street beyond the businesses, out to the fog.
+  for (let z = -150; z > I.z0 + 20; z -= range(22, 30)) {
+    const d = range(16, 24);
+    for (const [x0, x1] of [[54, I.x - I.half - W - 1], [I.x + I.half + W + 1, 126]])
+      addBox(pick(towerFacades), x1 - x0, range(14, 40), d - 2, (x0 + x1) / 2, 0, z - d / 2);
+  }
 
   // Fill every plot not taken by a street or a business with plain city blocks (seen from the air).
   const taken = [
@@ -271,7 +276,6 @@ export async function createCity(scene) {
   const logo = await createLogo();
   logo.group.position.copy(PLAN.logo);
   city.add(logo.group);
-  addBox(M.cornice, 32, 1.4, 6, PLAN.logo.x, .1, PLAN.logo.z - .8);       // plinth
   const crownLogo = await createLogo();
   crownLogo.group.scale.setScalar(.42);
   crownLogo.group.position.set(hx, H.h + 1.2, H.z1 - 1);
@@ -383,7 +387,10 @@ export async function createCity(scene) {
   const signMesh = signs.build();
   city.add(signMesh);
 
-  function update(light) {
+  function update(light, time) {
+    // The logo hovers: a slow bob and a slight sway.
+    logo.group.position.y = PLAN.logo.y + Math.sin(time * .6) * .35;
+    logo.group.rotation.y = Math.sin(time * .25) * .06;
     const n = THREE.MathUtils.smoothstep(light.night, .35, .85);
     nightUniform.value = n;
     bulbMat.emissiveIntensity = 4 * n;

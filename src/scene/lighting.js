@@ -99,8 +99,9 @@ export function createLighting(renderer, scene, { day: dayHdr, night: nightHdr }
     hemi.intensity = lerp(.25, .2, day);
     const dusk = smooth(elev, -.08, .02) * (1 - smooth(elev, .05, .25));
     scene.fog.color.copy(FOG_NIGHT).lerp(FOG_DAY, day).lerp(FOG_DUSK, dusk * .6);
-    scene.fog.near = lerp(260, 120, day);   // clearer air at night, so lit windows don't turn into haze
-    scene.fog.far = lerp(1300, 620, day);
+    // Clearer air at night so lit windows don't turn into haze; still thick enough by 700 m to hide street ends.
+    scene.fog.near = lerp(220, 120, day);
+    scene.fog.far = lerp(700, 620, day);
     renderer.toneMappingExposure = lerp(.9, 1, day);
     stars.material.opacity = smooth(state.night, .55, 1);
 

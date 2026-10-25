@@ -4,8 +4,8 @@ import * as THREE from 'three';
 // The loop starts and ends on the logo, the main subject.
 const v = (x, y, z) => new THREE.Vector3(x, y, z);
 const KEYS = [
-  { pos: v(-3, 6.5, -4), look: v(-3, 6.5, -32), speed: 1.6 },     // logo, close
-  { pos: v(14, 12, 9), look: v(-3, 6, -32), speed: 3.5 },         // pull back and rise
+  { pos: v(-3, 18, 2), look: v(-3, 18.5, -24), speed: 1.6 },      // logo floating over the plaza, close
+  { pos: v(16, 20, 12), look: v(-3, 17, -24), speed: 3.5 },       // pull back
   { pos: v(-36, 3.2, 4), look: v(-80, 3, -4), speed: 7 },         // down to street level, heading west
   { pos: v(-60, 2.6, 4.5), look: v(-63, 2.8, 16), speed: 4 },     // shops and the cafe terrace
   { pos: v(-100, 3, 2), look: v(-128, 3.5, -30), speed: 7 },      // supermarket comes into view
@@ -16,9 +16,9 @@ const KEYS = [
   { pos: v(100, 5, -24), look: v(134, 7, -46), speed: 5 },        // production
   { pos: v(88, 4, -66), look: v(62, 3, -78), speed: 5 },          // logistics docks, vans
   { pos: v(84, 3.5, -108), look: v(62, 2, -96), speed: 5 },
-  { pos: v(62, 46, -62), look: v(-3, 8, -32), speed: 12 },       // climb over the warehouse, the plaza ahead
-  { pos: v(30, 30, 18), look: v(-3, 7, -32), speed: 9 },          // circle round to the boulevard
-  { pos: v(-3, 11, 7), look: v(-3, 7, -32), speed: 5 },           // dive back to the plaza
+  { pos: v(72, 42, -16), look: v(-3, 16, -24), speed: 12 },       // climb out of the industrial street; the logo faces us
+  { pos: v(30, 28, 18), look: v(-3, 17, -24), speed: 9 },          // circle round to the boulevard
+  { pos: v(-3, 17, 12), look: v(-3, 18, -24), speed: 5 },           // dive back to the plaza
 ];
 
 /** Smooth, endlessly looping camera flight over KEYS with per-key speeds. */
