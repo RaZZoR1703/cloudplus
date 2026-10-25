@@ -10,15 +10,16 @@
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-  <canvas id="scene" aria-label="3D-город Cloudplus"></canvas>
+  <canvas id="scene" aria-label="3D-пролёт по городу Cloudplus"></canvas>
 
   <div class="brand">Cloudplus</div>
 
-  <div class="controls" role="group" aria-label="Время суток">
+  <div class="controls" role="group" aria-label="Управление">
+    <button id="mode">Свободная камера</button>
     <button id="play">Пауза</button>
     <label class="time">
-      <span id="clock">10:00</span>
-      <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.42" aria-label="Время суток">
+      <span id="clock">14:55</span>
+      <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.62" aria-label="Время суток">
     </label>
     <select id="quality" aria-label="Качество">
       <option value="auto">Качество: авто</option>

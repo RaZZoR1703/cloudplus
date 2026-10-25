@@ -2,3 +2,6 @@
 .claude/
 node_modules/
 dist/
+assets-src/
+.shots/
+.playwright-mcp/
