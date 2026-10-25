@@ -7,6 +7,6 @@ export default defineConfig({
   base: './',
   build: {
     chunkSizeWarningLimit: 800,
-    rollupOptions: { input: { main: 'index.html', city: 'city/index.html' } },
+    rollupOptions: { input: { main: 'index.html', city: 'city/index.html', next: 'next/index.html' } },
   },
 });
