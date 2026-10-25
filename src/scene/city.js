@@ -4,14 +4,14 @@ import { facadeMaterial, nightUniform } from './facade.js';
 
 // Stage-1 placeholder city: real CC0 models replace these primitives in stage 2.
 // The layout (grid, hero lots, roads) is what later stages build on.
-export const GRID = { cells: 6, pitch: 28, road: 8 };
+const GRID = { cells: 6, pitch: 28, road: 8 };
 const HALF = GRID.cells * GRID.pitch / 2 + 8;         // half-size of the diorama base
 const roadLine = i => -GRID.cells * GRID.pitch / 2 + i * GRID.pitch;
 const blockCenter = j => roadLine(j) + GRID.pitch / 2;
 const BLOCK = GRID.pitch - GRID.road;
 
 // Department lots, by block index [column, row].
-export const DEPARTMENTS = {
+const DEPARTMENTS = {
   hq: { block: [2, 2], name: 'Штаб-квартира и ИИ' },
   sales: { block: [1, 3], name: 'Продажи (CRM)' },
   warehouse: { block: [4, 1], name: 'Склад' },

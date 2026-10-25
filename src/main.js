@@ -17,7 +17,6 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.toneMapping = THREE.NeutralToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.info.autoReset = false;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(32, 1, 5, 5000);
@@ -68,14 +67,18 @@ let t = Number($('timeOfDay').value), playing = true;
 $('play').onclick = () => {
   playing = !playing;
   $('play').textContent = playing ? 'Пауза' : 'Пуск';
-  $('play').setAttribute('aria-pressed', playing);
 };
 $('timeOfDay').oninput = e => { t = Number(e.target.value); };
 $('quality').onchange = e => quality.set(e.target.value);
 
+// Performance overlay, only with ?debug in the URL.
 const hud = $('hud');
+const debug = new URLSearchParams(location.search).has('debug');
+hud.hidden = !debug;
+renderer.info.autoReset = !debug;
 let hudFrames = 0, hudTime = 0;
 function updateHud(dt) {
+  if (!debug) return;
   hudFrames++;
   hudTime += dt;
   if (hudTime < .5) return;
@@ -89,15 +92,26 @@ function updateHud(dt) {
   info.reset();
 }
 
+// The UI only changes every 5 in-scene minutes, so skip DOM writes in between.
+let shownStep = -1;
+function updateClock() {
+  const step = Math.floor(t * 288);
+  if (step === shownStep) return;
+  shownStep = step;
+  const minutes = step * 5;
+  $('clock').textContent = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  if (playing) $('timeOfDay').value = t;
+}
+
+// Compile the bloom path up front so the first dusk does not stall.
+city.update(0, lighting.update(t));
+composer.render();
+
 const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), .1);
-  if (playing) {
-    t = (t + dt / DAY_SECONDS) % 1;
-    $('timeOfDay').value = t;
-  }
-  const minutes = Math.floor(t * 24 * 60);
-  $('clock').textContent = `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+  if (playing) t = (t + dt / DAY_SECONDS) % 1;
+  updateClock();
 
   const light = lighting.update(t);
   city.update(dt, light);

@@ -65,7 +65,7 @@ export function createLighting(renderer, scene, { radius = 100 } = {}) {
 
   const sunDir = new THREE.Vector3();
   const lightDir = new THREE.Vector3();
-  const state = { day: 1, night: 0, elevation: 0 };
+  const state = { day: 1, night: 0 };
 
   function update(t) {
     const a = (t - .25) * Math.PI * 2;
@@ -77,7 +77,6 @@ export function createLighting(renderer, scene, { radius = 100 } = {}) {
     const day = smooth(elev, -.12, .22);
     state.day = day;
     state.night = 1 - day;
-    state.elevation = elev;
 
     // One directional light: the sun by day, the moon (mirrored arc) by night.
     // Intensities cross zero at the horizon, so the swap is invisible.
@@ -90,8 +89,8 @@ export function createLighting(renderer, scene, { radius = 100 } = {}) {
       light.intensity = .45 * smooth(-elev, 0, .2);
       light.color.copy(MOON);
     }
+    // castShadow stays on: toggling it recompiles every material (a visible hitch).
     light.position.copy(lightDir).multiplyScalar(radius * 2);
-    light.castShadow = light.intensity > .02;
 
     hemi.intensity = lerp(.45, .25, day);
     hemi.color.copy(SKY_NIGHT).lerp(SKY_DAY, day);
@@ -101,10 +100,10 @@ export function createLighting(renderer, scene, { radius = 100 } = {}) {
     // The Sky shader outputs physically bright radiance, so its env map needs a small multiplier.
     scene.environmentIntensity = lerp(.04, .12, day);
     renderer.toneMappingExposure = lerp(.75, 1, day);
+    // Always drawn (one cheap call), so the shader is compiled at load, not at the first dusk.
     stars.material.opacity = smooth(state.night, .55, 1);
-    stars.visible = stars.material.opacity > 0;
 
-    if (lightDir.angleTo(lastShadowDir) > .004 && light.castShadow) {
+    if (lightDir.angleTo(lastShadowDir) > .004) {
       renderer.shadowMap.needsUpdate = true;
       lastShadowDir.copy(lightDir);
     }
@@ -129,7 +128,7 @@ export function createLighting(renderer, scene, { radius = 100 } = {}) {
     renderer.shadowMap.needsUpdate = true;
   }
 
-  return { update, setShadowSize, state, sky };
+  return { update, setShadowSize };
 }
 
 function makeStars(count = 1600) {

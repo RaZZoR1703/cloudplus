@@ -15,7 +15,7 @@
   <div class="brand">Cloudplus</div>
 
   <div class="controls" role="group" aria-label="Время суток">
-    <button id="play" aria-pressed="true">Пауза</button>
+    <button id="play">Пауза</button>
     <label class="time">
       <span id="clock">10:00</span>
       <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.42" aria-label="Время суток">
@@ -28,7 +28,7 @@
     </select>
   </div>
 
-  <pre id="hud" aria-live="off"></pre>
+  <pre id="hud" aria-live="off" hidden></pre>
   <div id="loading">Загрузка сцены…</div>
 
   <script type="module" src="./src/main.js"></script>
