@@ -4,7 +4,8 @@ import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
-const BASE = `${import.meta.env.BASE_URL}assets/`;
+// The city page lives at /city/, its assets at the site root.
+const BASE = "../assets/";
 
 export const manager = new THREE.LoadingManager();
 const gltfLoader = new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);

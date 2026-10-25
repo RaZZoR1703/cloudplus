@@ -6,7 +6,7 @@ import { manager, place, bakedGeometry } from '../assets.js';
 import { PLAN } from './city.js';
 
 const loader = new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder);
-const BASE = `${import.meta.env.BASE_URL}assets/models/`;
+const BASE = "../assets/models/";   // relative to the /city/ page
 const WHEEL_RADIUS = .36;
 const PAINT = ['#f2f4f6', '#1d2733', '#8d99a6', '#0b3a8c', '#3f6377', '#6b1f24', '#c9ccd1', '#2b2f33'];
 

@@ -3,35 +3,222 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Cloudplus — бизнес, который работает сам</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./src/style.css">
+  <title>Cloudplus — программа под ваш бизнес</title>
+  <meta name="description" content="Как Cloudplus автоматизирует производство, склад, доставку, кофейню и магазин. Рабочая версия программы на ваших данных через 14 дней.">
+  <meta name="theme-color" content="#05070B">
+  <link rel="icon" href="./mark-blue.svg" type="image/svg+xml">
+  <link rel="preload" href="./fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/story/style.css">
 </head>
 <body>
-  <canvas id="scene" aria-label="3D-пролёт по городу Cloudplus"></canvas>
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="Cloudplus, в начало"><img src="./mark-white.svg" alt="" width="40" height="30"><span>Cloudplus</span></a>
+    <a class="pill pill-light" href="https://cloudplus.uz/">Узнать стоимость</a>
+  </header>
 
-  <div class="brand">Cloudplus</div>
+  <canvas id="logo3d" aria-hidden="true"></canvas>
 
-  <div class="controls" role="group" aria-label="Управление">
-    <button id="mode">Свободная камера</button>
-    <button id="play">Пауза</button>
-    <label class="time">
-      <span id="clock">14:55</span>
-      <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.62" aria-label="Время суток">
-    </label>
-    <select id="quality" aria-label="Качество">
-      <option value="auto">Качество: авто</option>
-      <option value="0">Экономное</option>
-      <option value="1">Сбалансированное</option>
-      <option value="2">Высокое</option>
-    </select>
-  </div>
+  <main>
+    <!-- Hero: the night city, the mark hovering above it -->
+    <section id="top" class="hero">
+      <video class="hero-video" src="./media/hero.mp4" poster="./media/hero.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
+      <div class="beam" aria-hidden="true"></div>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-copy">
+        <h1>Программа под&nbsp;ваш бизнес</h1>
+        <p class="lede">Работает через 14&nbsp;дней. Склад, продажи и&nbsp;деньги в&nbsp;одной системе.</p>
+      </div>
+      <p class="cue" aria-hidden="true"><span></span>Листайте: покажем на&nbsp;пяти бизнесах</p>
+    </section>
 
-  <pre id="hud" aria-live="off" hidden></pre>
-  <div id="loading">Загрузка сцены…</div>
+    <!-- The thread through the film -->
+    <section class="thread">
+      <p class="thread-line" data-words>Одна пачка кофе проходит через цех, склад, фургон, кофейню и&nbsp;магазин. В&nbsp;каждом из&nbsp;них Cloudplus берёт рутину на&nbsp;себя.</p>
+    </section>
 
-  <script type="module" src="./src/main.js"></script>
+    <!-- Chapters: footage scrubbed by scroll, the program's screens appear where the work happens -->
+    <section class="chapter" id="production" data-chapter="production">
+      <div class="stage">
+        <canvas class="film" aria-hidden="true"></canvas>
+        <div class="shade" aria-hidden="true"></div>
+        <h2 class="chapter-name">Производство</h2>
+        <div class="beat" data-at="0.18-0.52">
+          <p class="say">Партия кофе уже в&nbsp;плане цеха</p>
+          <div class="ui">
+            <div class="ui-head"><b>Производство</b><span class="chip">Сегодня</span></div>
+            <div class="ui-card">
+              <b>Партия №147 · обжарка</b>
+              <span class="muted">09:00 – 12:30 · цех 1 · 240 кг</span>
+              <div class="track"><i data-fill></i></div>
+              <span class="chip ok">Себестоимость ниже плана на 6%</span>
+            </div>
+            <div class="ui-row dim"><span>Партия №148 · обжарка</span><span class="muted">12:30 · в плане</span></div>
+          </div>
+        </div>
+        <div class="beat" data-at="0.58-0.96">
+          <p class="say">Расфасовали — и&nbsp;остатки уже в&nbsp;программе</p>
+          <div class="ui">
+            <div class="ui-head"><b>Склад</b><span class="chip">Обновлено сейчас</span></div>
+            <div class="ui-row hl"><span>Кофе 250&nbsp;г</span><span class="num" data-count="0-960"> шт</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-row"><span>Пакеты с&nbsp;клапаном</span><span class="num">1 200 шт</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-row"><span>Этикетки</span><span class="num">3 400 шт</span><span class="chip ok">В наличии</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="warehouse" data-chapter="warehouse">
+      <div class="stage">
+        <canvas class="film" aria-hidden="true"></canvas>
+        <div class="shade" aria-hidden="true"></div>
+        <h2 class="chapter-name">Склад и&nbsp;доставка</h2>
+        <div class="beat" data-at="0.16-0.5">
+          <p class="say">Каждая паллета на&nbsp;своём месте</p>
+          <div class="ui">
+            <div class="ui-head"><b>Приёмка №312</b><span class="chip ok">Принято</span></div>
+            <div class="ui-row hl"><span>Кофе 250&nbsp;г</span><span class="num">960 шт</span><span class="muted">ряд B · ячейка 14</span></div>
+            <div class="ui-row"><span>Чай чёрный</span><span class="num">420 шт</span><span class="muted">ряд B · ячейка 15</span></div>
+            <div class="ui-row"><span>Сахар 1&nbsp;кг</span><span class="num">600 шт</span><span class="muted">ряд C · ячейка 02</span></div>
+          </div>
+        </div>
+        <div class="beat" data-at="0.56-0.96">
+          <p class="say">Курьер видит заказ, вы видите курьера</p>
+          <div class="ui">
+            <div class="ui-head"><b>Доставка №58</b><span class="chip info" data-swap="В пути|Доставлено">В пути</span></div>
+            <svg class="route" viewBox="0 0 460 150" aria-hidden="true">
+              <path class="route-bg" d="M24 110 C 140 30, 300 150, 436 60"/>
+              <path class="route-go" d="M24 110 C 140 30, 300 150, 436 60" data-draw/>
+              <circle cx="24" cy="110" r="7"/><circle cx="436" cy="60" r="7"/>
+            </svg>
+            <div class="ui-row"><span class="muted">Склад</span><span></span><span class="muted">Кофейня</span></div>
+            <div class="ui-row"><span>40 коробок · кофе, чай, стаканы</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="cafe" data-chapter="cafe">
+      <div class="stage">
+        <canvas class="film" aria-hidden="true"></canvas>
+        <div class="shade" aria-hidden="true"></div>
+        <h2 class="chapter-name">Кофейня</h2>
+        <div class="beat" data-at="0.12-0.34">
+          <p class="say">Зерно кончается — заказ поставщику уже ушёл</p>
+          <div class="ui">
+            <div class="ui-head"><b>Сырьё</b><span class="chip">Кофейня</span></div>
+            <div class="ui-row hl"><span>Зерно, арабика</span><span class="bar"><i data-drain></i></span><span class="num" data-count="12-2"> кг</span></div>
+            <div class="ui-row"><span>Молоко 3,2%</span><span class="num">18 л</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-order" data-late>
+              <b>Заказ поставщику сформирован</b>
+              <span class="muted">Зерно, арабика · 20 кг · Coffee Import</span>
+              <span class="chip info">Создан автоматически</span>
+            </div>
+          </div>
+        </div>
+        <div class="beat" data-at="0.42-0.7">
+          <p class="say">Своя касса: чек сразу в&nbsp;выручке</p>
+          <div class="ui">
+            <div class="ui-head"><b>Касса</b><span class="chip">Смена открыта</span></div>
+            <div class="ui-row"><span>Капучино</span><span></span><span class="num">28 000</span></div>
+            <div class="ui-row"><span>Круассан</span><span></span><span class="num">18 000</span></div>
+            <div class="ui-total"><span>Итого</span><span class="num">46 000 сум</span></div>
+            <div class="ui-row hl" data-late><span>Выручка сегодня</span><span></span><span class="num" data-count="3354000-3400000"></span></div>
+          </div>
+        </div>
+        <div class="beat" data-at="0.76-0.97">
+          <p class="say">Поставщики, цены и&nbsp;сроки в&nbsp;одной карточке</p>
+          <div class="ui">
+            <div class="ui-head"><b>Coffee Import</b><span class="chip">Поставщик зерна</span></div>
+            <div class="ui-row"><span class="muted">Последняя цена</span><span></span><span class="num">210 000 сум/кг</span></div>
+            <div class="ui-row"><span class="muted">Ближайшая доставка</span><span></span><span>завтра, 10:00</span></div>
+            <div class="ui-row"><span class="muted">Заказов в этом году</span><span></span><span class="num">14</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter" id="store" data-chapter="store">
+      <div class="stage">
+        <canvas class="film" aria-hidden="true"></canvas>
+        <div class="shade" aria-hidden="true"></div>
+        <h2 class="chapter-name">Магазин</h2>
+        <div class="beat" data-at="0.2-0.96">
+          <p class="say">Остатки сходятся с&nbsp;продажами без пересчёта вручную</p>
+          <div class="ui">
+            <div class="ui-head"><b>Магазин</b><span class="chip">Остатки</span></div>
+            <div class="ui-row hl"><span>Кофе 250&nbsp;г</span><span class="num" data-count="46-41"> шт</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-row"><span>Чай чёрный</span><span class="num">120 шт</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-row"><span>Сахар 1&nbsp;кг</span><span class="num">80 шт</span><span class="chip ok">В наличии</span></div>
+            <div class="ui-row"><span class="muted">Кофе продано сегодня</span><span></span><span class="num" data-count="12-17"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- All of it is one program -->
+    <section class="one" id="one">
+      <div class="one-stage">
+        <h2 class="one-title">Вся компания в&nbsp;одной программе</h2>
+        <p class="one-copy">Деньги, склад, продажи и&nbsp;производство больше не&nbsp;живут в&nbsp;разных таблицах и&nbsp;чатах. Всё видно в&nbsp;одном окне и&nbsp;сходится само.</p>
+        <div class="app" aria-label="Окно программы Cloudplus">
+          <div class="app-side">
+            <div class="app-brand"><img src="./mark-white.svg" alt="" width="34" height="26">Cloudplus</div>
+            <span data-mod="production">Производство</span>
+            <span data-mod="warehouse">Склад</span>
+            <span data-mod="warehouse">Доставка</span>
+            <span data-mod="cafe">Касса</span>
+            <span data-mod="cafe">Закупки</span>
+            <span data-mod="store">Продажи</span>
+            <span>Финансы</span>
+          </div>
+          <div class="app-main">
+            <div class="app-kpi"><span class="muted">Выручка, сегодня</span><b class="num">3 400 000</b></div>
+            <svg class="app-chart" viewBox="0 0 600 160" aria-hidden="true"><path d="M0 140 L75 120 L150 128 L225 90 L300 98 L375 60 L450 70 L525 34 L600 18"/></svg>
+            <div class="app-feed">
+              <span>Партия №147 закрыта · 240&nbsp;кг</span>
+              <span>Доставка №58 · доставлено</span>
+              <span>Заказ поставщику · 20&nbsp;кг зерна</span>
+              <span>Магазин · продано 17 пачек кофе</span>
+            </div>
+          </div>
+        </div>
+        <img class="tile t1" src="./frames/roast/0001.webp" alt="Цех" data-tile="production">
+        <img class="tile t2" src="./frames/forklift/0001.webp" alt="Склад" data-tile="warehouse">
+        <img class="tile t3" src="./frames/pay/0001.webp" alt="Кофейня" data-tile="cafe">
+        <img class="tile t4" src="./frames/store/0001.webp" alt="Магазин" data-tile="store">
+      </div>
+    </section>
+
+    <!-- How Cloudplus works with a client: facts from cloudplus.uz -->
+    <section class="terms">
+      <ul>
+        <li><b>14 дней</b><span>до рабочей версии на ваших данных: товары, клиенты, остатки и&nbsp;цены уже внутри</span></li>
+        <li><b>Цена в&nbsp;договоре</b><span>фиксируется до начала работ и&nbsp;не растёт по&nbsp;ходу проекта</span></li>
+        <li><b>Исходный код у&nbsp;вас</b><span>после оплаты код и&nbsp;все данные принадлежат вашей компании</span></li>
+      </ul>
+      <p class="terms-foot">150+ клиентов · 60+ человек в&nbsp;команде · резидент IT&nbsp;Park</p>
+    </section>
+
+    <!-- The mark returns over the city -->
+    <section class="finale" id="finale">
+      <img class="finale-city" src="./media/hero.jpg" alt="" aria-hidden="true">
+      <div class="beam" aria-hidden="true"></div>
+      <div class="finale-shade" aria-hidden="true"></div>
+      <div class="finale-copy">
+        <h2>Программа под ваш бизнес. Работает через 14&nbsp;дней</h2>
+        <a class="pill pill-blue" href="https://cloudplus.uz/">Узнать стоимость</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Cloudplus · Ташкент, Буюк Турон 77</span>
+    <a href="tel:+998555887001">+998 55 588 70 01</a>
+    <a href="mailto:info@cloudplus.uz">info@cloudplus.uz</a>
+    <a href="./city/">3D-город</a>
+    <span class="muted">Видео: Pexels</span>
+  </footer>
+
+  <script type="module" src="./src/story/main.js"></script>
 </body>
 </html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloudplus — бизнес, который работает сам</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../src/style.css">
+</head>
+<body>
+  <canvas id="scene" aria-label="3D-пролёт по городу Cloudplus"></canvas>
+
+  <div class="brand">Cloudplus</div>
+
+  <div class="controls" role="group" aria-label="Управление">
+    <button id="mode">Свободная камера</button>
+    <button id="play">Пауза</button>
+    <label class="time">
+      <span id="clock">14:55</span>
+      <input id="timeOfDay" type="range" min="0" max="1" step="0.001" value="0.62" aria-label="Время суток">
+    </label>
+    <select id="quality" aria-label="Качество">
+      <option value="auto">Качество: авто</option>
+      <option value="0">Экономное</option>
+      <option value="1">Сбалансированное</option>
+      <option value="2">Высокое</option>
+    </select>
+  </div>
+
+  <pre id="hud" aria-live="off" hidden></pre>
+  <div id="loading">Загрузка сцены…</div>
+
+  <script type="module" src="../src/main.js"></script>
+</body>
+</html>
