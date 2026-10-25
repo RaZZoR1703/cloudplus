@@ -1,0 +1,90 @@
+<template>
+  <style>
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-cyrillic.woff2") format("woff2"); unicode-range: U+0400-04FF; font-weight: 100 900; }
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-latin.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #EEF3FB; font-family: "Geist", sans-serif; }
+    #st-world { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: #E5F1EA; transform-origin: 0 0; border-radius: 0; overflow: hidden; }
+    #st-light { position: absolute; inset: 0; background: radial-gradient(1000px 700px at 520px 560px, rgba(255,255,255,.7), rgba(255,255,255,0) 70%); }
+    #st-title { position: absolute; left: 140px; top: 100px; width: 820px; color: #0A1B33; font-family: "Onest", sans-serif; font-size: 76px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+    #st-title .w { display: inline-block; }
+    #st-title .accent { color: #0B3A8C; }
+    #st-shelf { position: absolute; left: 140px; top: 330px; width: 760px; height: 640px; background: #EADBC4; border-radius: 18px; box-shadow: 0 24px 48px rgba(10,27,51,.16); }
+    .st-board { position: absolute; left: 0; right: 0; height: 22px; background: #C8A579; }
+    .st-pack { position: absolute; width: 84px; height: 118px; }
+    #st-panel { position: absolute; left: 1000px; top: 200px; width: 800px; height: 680px; background: #0B0C10; border-radius: 24px; color: #fff; box-shadow: 0 24px 48px rgba(10,27,51,.18); }
+    .st-head { position: absolute; left: 44px; top: 34px; font-size: 36px; font-weight: 600; }
+    .st-chip { position: absolute; right: 40px; top: 36px; font-size: 28px; border-radius: 999px; padding: 6px 18px; color: #9A9EAA; border: 1px solid rgba(255,255,255,.12); }
+    .st-row { position: absolute; left: 24px; right: 24px; height: 92px; display: grid; grid-template-columns: 1.4fr .9fr .9fr; align-items: center; padding: 0 20px; font-size: 30px; }
+    .st-row .mono { font-family: "Geist Mono", monospace; }
+    .ok { justify-self: start; color: #4ADE80; background: rgba(31,157,85,.16); border-radius: 999px; padding: 6px 16px; font-size: 28px; }
+    #st-hero-row { background: rgba(63,169,245,.12); border-radius: 16px; }
+    #st-sold { position: absolute; left: 44px; bottom: 44px; font-size: 28px; color: #9A9EAA; }
+    #st-sold b { display: block; margin-top: 6px; font-family: "Geist Mono", monospace; font-size: 56px; font-weight: 500; color: #fff; }
+    #st-bag { position: absolute; left: 0; top: 0; width: 84px; height: 118px; }
+  </style>
+  <div id="root" data-composition-id="store" data-width="1920" data-height="1080">
+    <div id="st-world">
+      <div id="st-light"></div>
+      <div id="st-shelf">
+        <div class="st-board" style="top:200px"></div><div class="st-board" style="top:410px"></div><div class="st-board" style="top:618px"></div>
+        <!-- packs on the shelves: tea (green), sugar (white), coffee (kraft) -->
+        <svg class="st-pack" style="left:60px;top:82px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#2F6B4F"/><rect x="6" y="50" width="72" height="22" fill="#E5F1EA"/></svg>
+        <svg class="st-pack" style="left:160px;top:82px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#2F6B4F"/><rect x="6" y="50" width="72" height="22" fill="#E5F1EA"/></svg>
+        <svg id="st-sold-pack" class="st-pack" style="left:260px;top:82px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:360px;top:82px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:470px;top:82px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#F4F4F2"/><rect x="6" y="40" width="72" height="30" fill="#D94A3F"/></svg>
+        <svg class="st-pack" style="left:570px;top:82px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#F4F4F2"/><rect x="6" y="40" width="72" height="30" fill="#D94A3F"/></svg>
+        <svg class="st-pack" style="left:60px;top:292px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:160px;top:292px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:370px;top:292px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#2F6B4F"/><rect x="6" y="50" width="72" height="22" fill="#E5F1EA"/></svg>
+        <svg class="st-pack" style="left:470px;top:292px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#2F6B4F"/><rect x="6" y="50" width="72" height="22" fill="#E5F1EA"/></svg>
+        <svg class="st-pack" style="left:570px;top:292px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#F4F4F2"/><rect x="6" y="40" width="72" height="30" fill="#D94A3F"/></svg>
+        <svg class="st-pack" style="left:60px;top:500px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#F4F4F2"/><rect x="6" y="40" width="72" height="30" fill="#D94A3F"/></svg>
+        <svg class="st-pack" style="left:160px;top:500px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#F4F4F2"/><rect x="6" y="40" width="72" height="30" fill="#D94A3F"/></svg>
+        <svg class="st-pack" style="left:260px;top:500px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:360px;top:500px" viewBox="0 0 84 118"><path d="M12 14 L72 14 L78 116 L6 116 Z" fill="#C89B6C"/><rect x="8" y="60" width="70" height="26" fill="#0B3A8C"/></svg>
+        <svg class="st-pack" style="left:470px;top:500px" viewBox="0 0 84 118"><rect x="6" y="6" width="72" height="112" rx="6" fill="#2F6B4F"/><rect x="6" y="50" width="72" height="22" fill="#E5F1EA"/></svg>
+        <!-- the hero pack lands in the gap on the middle shelf -->
+        <svg id="st-bag" viewBox="0 0 300 420" style="left:262px;top:292px">
+          <path d="M38 64 L262 64 L284 404 Q285 418 271 418 L29 418 Q15 418 16 404 Z" fill="#C89B6C"/>
+          <path d="M38 64 L262 64 L252 18 Q249 6 236 6 L64 6 Q51 6 48 18 Z" fill="#A87D52"/>
+          <rect x="25" y="214" width="250" height="104" fill="#0B3A8C"/>
+          <image href="assets/mark-white.svg" x="122" y="226" width="56" height="42"/>
+        </svg>
+      </div>
+      <div id="st-panel">
+        <div class="st-head">Магазин</div>
+        <div class="st-chip">Остатки</div>
+        <div id="st-hero-row" class="st-row" style="top:110px"><span>Кофе 250 г</span><span class="mono" id="st-count">46 шт</span><span class="ok">В наличии</span></div>
+        <div class="st-row" style="top:210px"><span>Чай чёрный</span><span class="mono">120 шт</span><span class="ok">В наличии</span></div>
+        <div class="st-row" style="top:310px"><span>Сахар 1 кг</span><span class="mono">80 шт</span><span class="ok">В наличии</span></div>
+        <div id="st-sold">Кофе продано сегодня<b id="st-sold-n">12</b></div>
+      </div>
+      <h1 id="st-title"><span class="w">Остатки</span> <span class="w">сходятся</span> <span class="w accent">с&nbsp;продажами</span></h1>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // The pack arrives from the left and drops into its slot.
+    tl.fromTo("#st-bag", { x: -700, y: -260, rotation: -12 }, { x: 0, y: 0, rotation: 0, duration: 0.7, ease: "expo.out" }, 0);
+    tl.fromTo("#st-panel", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 0.25);
+    tl.fromTo("#st-title .w", { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" }, 0.35);
+    // A customer takes a pack: the shelf and the numbers change together.
+    tl.to("#st-sold-pack", { x: -380, y: -40, opacity: 0, duration: 0.5, ease: "power3.in" }, 1.9);
+    const n = { v: 0 };
+    tl.fromTo(n, { v: 0 }, { v: 1, duration: 0.01,
+      onUpdate: () => {
+        document.querySelector("#st-count").textContent = (n.v >= 1 ? 45 : 46) + " шт";
+        document.querySelector("#st-sold-n").textContent = n.v >= 1 ? "13" : "12";
+      } }, 2.35);
+    tl.fromTo("#st-hero-row", { backgroundColor: "rgba(63,169,245,.12)" }, { backgroundColor: "rgba(63,169,245,.32)", duration: 0.12, yoyo: true, repeat: 1 }, 2.35);
+    tl.to("#st-title", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 3.25);
+    // Pull back: the whole store shrinks into its tile of the next shot.
+    tl.fromTo("#st-world", { x: 0, y: 0, scale: 1, borderRadius: 0 },
+      { x: 1440, y: 700, scale: .1875, borderRadius: 96, duration: 0.6, ease: "power3.inOut" }, 3.4);
+    window.__timelines["store"] = tl;
+  </script>
+</template>

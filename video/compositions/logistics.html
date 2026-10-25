@@ -1,0 +1,103 @@
+<template>
+  <style>
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-cyrillic.woff2") format("woff2"); unicode-range: U+0400-04FF; font-weight: 100 900; }
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-latin.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #E6EDF6; font-family: "Geist", sans-serif; }
+    #lo-light { position: absolute; inset: 0; background: radial-gradient(1000px 700px at 280px 320px, rgba(255,255,255,.75), rgba(255,255,255,0) 70%); }
+    #lo-title { position: absolute; left: 120px; top: 390px; width: 540px; color: #0A1B33; font-family: "Onest", sans-serif; font-size: 76px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+    #lo-title .w { display: inline-block; }
+    #lo-title .accent { color: #0B3A8C; }
+    .lo-panel { position: absolute; left: 700px; width: 1100px; background: #0B0C10; border-radius: 24px; color: #fff; box-shadow: 0 24px 48px rgba(10,27,51,.18); }
+    #lo-stock { top: 110px; height: 420px; }
+    #lo-route { top: 570px; height: 400px; }
+    .lo-head { position: absolute; left: 44px; top: 32px; font-size: 36px; font-weight: 600; }
+    .lo-chip { position: absolute; right: 40px; top: 34px; font-size: 28px; border-radius: 999px; padding: 6px 18px; }
+    #lo-fresh { color: #9A9EAA; border: 1px solid rgba(255,255,255,.12); }
+    .lo-cols { position: absolute; left: 44px; right: 44px; top: 104px; display: grid; grid-template-columns: 1.6fr 1fr 1fr; font-size: 28px; color: #9A9EAA; }
+    .lo-row { position: absolute; left: 24px; right: 24px; height: 74px; display: grid; grid-template-columns: 1.6fr 1fr 1fr; align-items: center; padding: 0 20px; font-size: 30px; border-radius: 16px; }
+    .lo-row .num { font-family: "Geist Mono", monospace; }
+    .lo-ok { justify-self: start; font-size: 28px; color: #4ADE80; background: rgba(31,157,85,.16); border-radius: 999px; padding: 6px 16px; }
+    #lo-r1 { top: 146px; background: rgba(63,169,245,.16); }
+    #lo-r2 { top: 228px; }
+    #lo-r3 { top: 310px; }
+    #lo-status { color: #3FA9F5; background: rgba(63,169,245,.16); }
+    #lo-done { color: #4ADE80; background: #12301F; opacity: 0; }
+    #lo-map { position: absolute; left: 0; top: 0; width: 1100px; height: 400px; }
+    .lo-pin-label { position: absolute; top: 300px; font-size: 30px; color: #9A9EAA; }
+    #lo-bag { position: absolute; left: 0; top: 560px; width: 180px; height: 252px; filter: drop-shadow(0 18px 24px rgba(10,27,51,.25)); }
+    #lo-iris { position: absolute; inset: 0; background: #EFE3D3; clip-path: circle(0px at 1720px 820px); }
+  </style>
+  <div id="root" data-composition-id="logistics" data-width="1920" data-height="1080">
+    <div id="lo-light"></div>
+    <div id="lo-stock" class="lo-panel">
+      <div class="lo-head">Склад</div>
+      <div id="lo-fresh" class="lo-chip">Обновлено сейчас</div>
+      <div class="lo-cols"><span>Товар</span><span>Остаток</span><span>Состояние</span></div>
+      <div id="lo-r1" class="lo-row"><span>Кофе в зёрнах</span><span class="num">240 кг</span><span class="lo-ok">В наличии</span></div>
+      <div id="lo-r2" class="lo-row"><span>Пакеты 250 г</span><span class="num">1 200 шт</span><span class="lo-ok">В наличии</span></div>
+      <div id="lo-r3" class="lo-row"><span>Фильтры</span><span class="num">380 шт</span><span class="lo-ok">В наличии</span></div>
+    </div>
+    <div id="lo-route" class="lo-panel">
+      <div class="lo-head">Доставка №58</div>
+      <div id="lo-status" class="lo-chip">В пути</div>
+      <div id="lo-done" class="lo-chip">Доставлено</div>
+      <svg id="lo-map" viewBox="0 0 1100 400">
+        <path id="lo-path-bg" d="M110 240 C 380 130, 720 350, 990 240" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="10" stroke-linecap="round"/>
+        <path id="lo-path" d="M110 240 C 380 130, 720 350, 990 240" fill="none" stroke="#3FA9F5" stroke-width="10" stroke-linecap="round"/>
+        <circle cx="110" cy="240" r="16" fill="#FFFFFF"/>
+        <circle id="lo-pin-b" cx="990" cy="240" r="16" fill="#FFFFFF"/>
+        <g id="lo-van">
+          <rect x="-60" y="-34" width="120" height="56" rx="12" fill="#FFFFFF"/>
+          <rect x="22" y="-28" width="30" height="22" rx="5" fill="#0B0C10"/>
+          <rect x="-60" y="0" width="120" height="10" fill="#0B3A8C"/>
+          <circle cx="-34" cy="24" r="11" fill="#0B0C10"/><circle cx="34" cy="24" r="11" fill="#0B0C10"/>
+        </g>
+      </svg>
+      <div class="lo-pin-label" style="left:70px">Склад</div>
+      <div class="lo-pin-label" style="left:930px">Кофейня</div>
+    </div>
+    <svg id="lo-bag" viewBox="0 0 300 420">
+      <path d="M38 64 L262 64 L284 404 Q285 418 271 418 L29 418 Q15 418 16 404 Z" fill="#C89B6C"/>
+      <path d="M38 64 L262 64 L252 18 Q249 6 236 6 L64 6 Q51 6 48 18 Z" fill="#A87D52"/>
+      <rect x="25" y="214" width="250" height="104" fill="#0B3A8C"/>
+      <image href="assets/mark-white.svg" x="122" y="226" width="56" height="42"/>
+      <text x="150" y="300" text-anchor="middle" font-family="Onest" font-weight="700" font-size="28" letter-spacing="6" fill="#FFFFFF">COFFEE</text>
+    </svg>
+    <h1 id="lo-title"><span class="w">Склад</span> <span class="w">и&nbsp;доставка</span> <span class="w accent">без&nbsp;звонков</span></h1>
+    <div id="lo-iris"></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // The pack arrives from the left (caught from the production whip) and drops into the stock table.
+    tl.fromTo("#lo-bag", { x: -260, scale: 1, opacity: 1 }, { x: 900, duration: 0.45, ease: "power3.out" }, 0);
+    tl.to("#lo-bag", { x: 1000, y: -400, scale: .2, opacity: 0, duration: 0.3, ease: "power3.in" }, 0.45);
+    tl.fromTo("#lo-stock", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 0.1);
+    tl.fromTo("#lo-r1", { opacity: 0, scale: .96 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.6)" }, 0.72);
+    tl.to("#lo-r1", { backgroundColor: "rgba(63,169,245,0)", duration: 0.8, ease: "power2.out" }, 1.4);
+    tl.fromTo("#lo-title .w", { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" }, 0.4);
+    // The delivery: route draws, the van drives it, status flips.
+    tl.fromTo("#lo-route", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 1.2);
+    const path = document.querySelector("#lo-path");
+    const len = path.getTotalLength();
+    tl.fromTo(path, { strokeDasharray: len, strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut" }, 1.5);
+    const van = document.querySelector("#lo-van");
+    const drive = { p: 0 };
+    const place = () => {
+      const a = path.getPointAtLength(drive.p * len), b = path.getPointAtLength(Math.min(len, drive.p * len + 2));
+      const angle = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI;
+      van.setAttribute("transform", `translate(${a.x} ${a.y - 20}) rotate(${angle})`);
+    };
+    place();
+    tl.fromTo(drive, { p: 0 }, { p: 1, duration: 2.0, ease: "power1.inOut", onUpdate: place }, 2.2);
+    tl.to("#lo-status", { opacity: 0, duration: 0.1 }, 4.25);
+    tl.fromTo("#lo-done", { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 4.25);
+    tl.to("#lo-title", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 5.1);
+    // Into the coffee shop through the delivery pin.
+    tl.fromTo("#lo-iris", { clipPath: "circle(0px at 1690px 810px)" },
+      { clipPath: "circle(2300px at 1690px 810px)", duration: 0.6, ease: "power3.in" }, 5.35);
+    window.__timelines["logistics"] = tl;
+  </script>
+</template>

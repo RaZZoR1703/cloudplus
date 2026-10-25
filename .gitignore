@@ -5,3 +5,6 @@ dist/
 assets-src/
 .shots/
 .playwright-mcp/
+renders/
+capture/
+.hyperframes/

@@ -1,0 +1,166 @@
+<template>
+  <style>
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-cyrillic.woff2") format("woff2"); unicode-range: U+0400-04FF; font-weight: 100 900; }
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-latin.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #0A1B33; font-family: "Onest", sans-serif; }
+    #fi-sky { position: absolute; inset: 0; background: radial-gradient(900px 620px at 960px 330px, rgba(63,169,245,.22), rgba(10,27,51,0) 70%); }
+    /* The site's signature: a vertical beam of light, here holding the logo above the city. */
+    #fi-beam { position: absolute; left: 900px; top: -40px; width: 120px; height: 1160px; background: radial-gradient(60px 600px at 60px 580px, rgba(120,200,255,.55), rgba(63,169,245,0) 100%); filter: blur(18px); transform-origin: 50% 100%; }
+    #fi-city { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+    #fi-hover { position: absolute; inset: 0; }
+    #fi-mark { position: absolute; left: 780px; top: 150px; width: 360px; height: 271px; }
+    #fi-word { position: absolute; left: 0; right: 0; top: 452px; text-align: center; color: #FFFFFF; font-size: 120px; font-weight: 600; letter-spacing: -0.02em; }
+    #fi-line { position: absolute; left: 0; right: 0; top: 612px; text-align: center; color: #C9D2DC; font-size: 44px; font-weight: 500; }
+    #fi-line .w { display: inline-block; }
+    #fi-cta { position: absolute; left: 790px; top: 704px; width: 340px; height: 84px; border-radius: 999px; background: #FFFFFF; color: #0A1B33; font-size: 40px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+  </style>
+  <div id="root" data-composition-id="finale" data-width="1920" data-height="1080">
+    <div id="fi-sky"></div>
+    <div id="fi-beam"></div>
+    <svg id="fi-city" viewBox="0 0 1920 1080">
+<rect x="-20" y="813" width="83" height="267" fill="#0D2342"/>
+<rect x="60" y="795" width="152" height="285" fill="#0F2747"/>
+<rect x="211" y="805" width="135" height="275" fill="#0F2747"/>
+<rect x="344" y="855" width="70" height="225" fill="#112C51"/>
+<rect x="419" y="963" width="112" height="117" fill="#112C51"/>
+<rect x="540" y="871" width="101" height="209" fill="#0D2342"/>
+<rect x="650" y="834" width="109" height="246" fill="#0F2747"/>
+<rect x="767" y="945" width="147" height="135" fill="#0D2342"/>
+<rect x="911" y="988" width="150" height="92" fill="#0D2342"/>
+<rect x="1068" y="908" width="108" height="172" fill="#112C51"/>
+<rect x="1178" y="841" width="95" height="239" fill="#0D2342"/>
+<rect x="1278" y="825" width="118" height="255" fill="#112C51"/>
+<rect x="1405" y="921" width="123" height="159" fill="#112C51"/>
+<rect x="1537" y="873" width="118" height="207" fill="#0D2342"/>
+<rect x="1658" y="798" width="102" height="282" fill="#112C51"/>
+<rect x="1762" y="869" width="129" height="211" fill="#0F2747"/>
+<rect x="1893" y="913" width="135" height="167" fill="#112C51"/>
+<rect class="fi-win" x="36" y="857" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="36" y="961" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="14" y="987" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="-8" y="1013" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="72" y="865" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="116" y="865" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="116" y="891" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="94" y="969" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="72" y="995" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="116" y="995" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="138" y="995" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="160" y="995" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="116" y="1021" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="160" y="1021" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="72" y="1047" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="182" y="1047" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="289" y="875" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="223" y="901" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="289" y="927" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="311" y="927" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="223" y="953" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="289" y="979" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="289" y="1005" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="245" y="1031" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="267" y="1057" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="311" y="1057" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="356" y="977" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="431" y="981" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="431" y="1033" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="497" y="1059" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="618" y="889" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="552" y="915" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="618" y="915" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="596" y="967" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="596" y="993" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="552" y="1019" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="552" y="1045" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="662" y="852" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="706" y="878" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="728" y="878" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="662" y="904" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="728" y="982" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="684" y="1008" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="728" y="1008" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="728" y="1034" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="845" y="963" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="801" y="989" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="867" y="989" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="889" y="989" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="823" y="1015" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="889" y="1015" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="945" y="1006" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1011" y="1006" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="989" y="1032" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1033" y="1058" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1080" y="926" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1080" y="952" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1124" y="952" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1146" y="952" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1102" y="978" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1080" y="1004" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1124" y="1004" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1124" y="1056" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1234" y="859" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1256" y="859" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1234" y="911" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1356" y="843" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1290" y="869" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1378" y="869" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1290" y="895" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1356" y="895" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1312" y="921" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1378" y="921" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1312" y="947" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1312" y="973" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1290" y="1025" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1334" y="1025" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1378" y="1025" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1290" y="1051" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1312" y="1051" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1356" y="1051" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1461" y="965" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1505" y="965" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1439" y="1017" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1417" y="1043" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1439" y="1043" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1549" y="891" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1571" y="891" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1637" y="969" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1615" y="995" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1571" y="1021" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1637" y="1047" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1670" y="816" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1670" y="868" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1692" y="946" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1818" y="913" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1818" y="939" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1862" y="939" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1818" y="991" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1862" y="991" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1774" y="1017" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1862" y="1017" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1774" y="1043" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1840" y="1043" width="9" height="12" fill="#7CC4FA"/>
+<rect class="fi-win" x="1927" y="957" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1993" y="1009" width="9" height="12" fill="#F7C873"/>
+<rect class="fi-win" x="1949" y="1035" width="9" height="12" fill="#F7C873"/>
+    </svg>
+    <div id="fi-hover"><img id="fi-mark" src="assets/mark-blue.svg" alt="Cloudplus"></div>
+    <div id="fi-word">Cloudplus</div>
+    <div id="fi-line"><span class="w">Программа под ваш бизнес.</span> <span class="w">Работает через 14 дней</span></div>
+    <div id="fi-cta">cloudplus.uz</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Night falls on the city from the flood; windows light up.
+    tl.fromTo("#fi-city", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7, ease: "expo.out" }, 0);
+    tl.fromTo(".fi-win", { opacity: 0 }, { opacity: 1, duration: 0.2, stagger: { each: 0.004, from: "random" } }, 0.3);
+    tl.fromTo("#fi-beam", { scaleY: 0, opacity: 0 }, { scaleY: 1, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.2);
+    // The logo rises out of the city on the beam and hovers above it.
+    tl.fromTo("#fi-mark", { y: 520, scale: .7, opacity: 0 }, { y: 0, scale: 1, opacity: 1, duration: 1.0, ease: "expo.out" }, 0.25);
+    // A slow hover, as in v8 (the client asked for the logo to float).
+    tl.fromTo("#fi-hover", { y: 0 }, { y: -10, duration: 0.9, ease: "sine.inOut", yoyo: true, repeat: 2 }, 1.25);
+    tl.fromTo("#fi-word", { clipPath: "inset(0px 100% 0px 0px)" }, { clipPath: "inset(0px 0% 0px 0px)", duration: 0.5, ease: "power3.out" }, 1.0);
+    tl.fromTo("#fi-line .w", { opacity: 0, filter: "blur(6px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.12, ease: "power4.out" }, 1.45);
+    tl.fromTo("#fi-cta", { opacity: 0, scale: .85 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, 1.85);
+    window.__timelines["finale"] = tl;
+  </script>
+</template>

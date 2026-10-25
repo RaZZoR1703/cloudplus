@@ -1,0 +1,189 @@
+<template>
+  <style>
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-cyrillic.woff2") format("woff2"); unicode-range: U+0400-04FF; font-weight: 100 900; }
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-latin.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #EFE3D3; font-family: "Geist", sans-serif; }
+    #ca-light { position: absolute; inset: 0; background: radial-gradient(1000px 700px at 300px 320px, rgba(255,255,255,.7), rgba(255,255,255,0) 70%); }
+    .ca-title { position: absolute; left: 120px; top: 380px; width: 540px; color: #0A1B33; font-family: "Onest", sans-serif; font-size: 76px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+    .ca-title .w { display: inline-block; opacity: 0; }
+    #ca-money, #ca-stock, #ca-sup, #ca-receipt, #ca-line, #ca-total, #ca-po { opacity: 0; }
+    .ca-title .accent { color: #0B3A8C; }
+    .ca-panel { position: absolute; left: 700px; top: 150px; width: 1100px; height: 780px; background: #0B0C10; border-radius: 24px; color: #fff; box-shadow: 0 24px 48px rgba(10,27,51,.18); }
+    .ca-head { position: absolute; left: 44px; top: 34px; font-size: 36px; font-weight: 600; }
+    .ca-chip { position: absolute; right: 40px; top: 36px; font-size: 28px; border-radius: 999px; padding: 6px 18px; color: #9A9EAA; border: 1px solid rgba(255,255,255,.12); }
+    .ok { color: #4ADE80; background: rgba(31,157,85,.16); border-radius: 999px; padding: 6px 16px; font-size: 28px; }
+    .low { color: #F0A03C; background: rgba(240,160,60,.16); border-radius: 999px; padding: 6px 16px; font-size: 28px; }
+    .info { color: #3FA9F5; background: rgba(63,169,245,.16); border-radius: 999px; padding: 6px 16px; font-size: 28px; }
+    .mono { font-family: "Geist Mono", monospace; }
+    /* a: POS */
+    .ca-tile { position: absolute; width: 220px; height: 150px; background: #14161D; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 22px; font-size: 28px; font-weight: 600; }
+    .ca-tile span { display: block; margin-top: 30px; font-family: "Geist Mono", monospace; font-size: 28px; font-weight: 400; color: #9A9EAA; }
+    #ca-order { position: absolute; left: 760px; top: 110px; width: 300px; height: 620px; background: #14161D; border-radius: 20px; padding: 24px; }
+    #ca-order h4 { font-size: 28px; color: #9A9EAA; font-weight: 500; }
+    #ca-line { margin-top: 24px; font-size: 28px; display: flex; justify-content: space-between; }
+    #ca-total { position: absolute; left: 24px; right: 24px; bottom: 130px; display: flex; justify-content: space-between; font-size: 30px; font-weight: 600; }
+    #ca-pay { position: absolute; left: 24px; right: 24px; bottom: 24px; height: 80px; border-radius: 999px; background: #FFFFFF; color: #0B0C10; font-size: 30px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+    #ca-receipt { position: absolute; left: 1360px; top: 360px; width: 360px; padding: 28px 30px; background: #FFFFFF; color: #0B0C10; border-radius: 8px; font-family: "Geist Mono", monospace; font-size: 30px; line-height: 1.5; box-shadow: 0 24px 48px rgba(10,27,51,.28); }
+    #ca-receipt b { display: block; font-size: 30px; }
+    /* b: money */
+    #ca-rev-label { position: absolute; left: 44px; top: 120px; font-size: 30px; color: #9A9EAA; }
+    #ca-rev { position: absolute; left: 44px; top: 160px; font-size: 96px; font-weight: 500; letter-spacing: -0.02em; }
+    #ca-rev-up { position: absolute; left: 44px; top: 290px; }
+    #ca-chart { position: absolute; left: 44px; top: 350px; width: 1012px; height: 250px; }
+    .ca-stat { position: absolute; top: 640px; font-size: 28px; color: #9A9EAA; }
+    .ca-stat b { display: block; margin-top: 6px; font-family: "Geist Mono", monospace; font-size: 40px; font-weight: 500; color: #FFFFFF; }
+    /* c: raw stock */
+    .ca-row { position: absolute; left: 24px; right: 24px; height: 96px; display: grid; grid-template-columns: 1.3fr 1.6fr 1fr; align-items: center; padding: 0 20px; font-size: 30px; white-space: nowrap; }
+    #ca-bar { position: relative; width: 260px; height: 14px; border-radius: 7px; background: rgba(255,255,255,.08); }
+    #ca-bar i { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; border-radius: 7px; background: #4ADE80; transform-origin: 0 50%; }
+    #ca-kg { position: absolute; left: 280px; top: -20px; font-family: "Geist Mono", monospace; font-size: 30px; }
+    #ca-status-low { opacity: 0; position: absolute; }
+    #ca-po { position: absolute; left: 44px; right: 44px; top: 470px; height: 250px; border: 2px solid #3FA9F5; background: #0E1A2A; border-radius: 20px; padding: 30px 34px; }
+    #ca-po h4 { font-size: 34px; font-weight: 600; }
+    #ca-po p { margin-top: 12px; font-size: 30px; color: #C9D2DC; }
+    #ca-po .info { position: absolute; right: 34px; top: 32px; }
+    /* d: supplier */
+    #ca-sup { position: absolute; left: 700px; top: 250px; width: 1100px; height: 560px; background: #14161D; border: 1px solid rgba(255,255,255,.12); border-radius: 24px; color: #fff; padding: 44px; box-shadow: 0 30px 60px rgba(10,27,51,.35); }
+    #ca-avatar { width: 110px; height: 110px; border-radius: 50%; background: #0B3A8C; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 600; }
+    #ca-sup h3 { position: absolute; left: 180px; top: 52px; font-size: 44px; font-weight: 600; }
+    #ca-sup .sub { position: absolute; left: 180px; top: 112px; font-size: 28px; color: #9A9EAA; }
+    .ca-sup-row { position: absolute; left: 44px; right: 44px; display: flex; justify-content: space-between; font-size: 32px; padding: 26px 0; border-top: 1px solid rgba(255,255,255,.08); }
+    .ca-sup-row span { color: #9A9EAA; }
+    #ca-cursor { position: absolute; left: 0; top: 0; width: 64px; height: 64px; }
+    #ca-bag { position: absolute; left: 0; top: 700px; width: 180px; height: 252px; filter: drop-shadow(0 18px 24px rgba(10,27,51,.25)); }
+  </style>
+  <div id="root" data-composition-id="cafe" data-width="1920" data-height="1080">
+    <div id="ca-light"></div>
+
+    <div id="ca-pos" class="ca-panel">
+      <div class="ca-head">Касса</div>
+      <div class="ca-chip">Смена открыта</div>
+      <div id="ca-t1" class="ca-tile" style="left:40px;top:110px">Капучино<span>28 000</span></div>
+      <div class="ca-tile" style="left:280px;top:110px">Латте<span>30 000</span></div>
+      <div class="ca-tile" style="left:520px;top:110px">Американо<span>22 000</span></div>
+      <div class="ca-tile" style="left:40px;top:280px">Раф<span>32 000</span></div>
+      <div class="ca-tile" style="left:280px;top:280px">Круассан<span>18 000</span></div>
+      <div class="ca-tile" style="left:520px;top:280px">Чай<span>15 000</span></div>
+      <div id="ca-order">
+        <h4>Заказ</h4>
+        <div id="ca-line"><span>Капучино</span><span class="mono">28 000</span></div>
+        <div id="ca-total"><span>Итого</span><span class="mono">28 000</span></div>
+        <div id="ca-pay">Оплатить</div>
+      </div>
+    </div>
+    <div id="ca-receipt"><b>Чек №1042</b>28 000 сум</div>
+
+    <div id="ca-money" class="ca-panel">
+      <div class="ca-head">Деньги</div>
+      <div class="ca-chip">Сегодня</div>
+      <div id="ca-rev-label">Выручка</div>
+      <div id="ca-rev" class="mono">3 372 000</div>
+      <div id="ca-rev-up" class="ok">+28 000 · чек №1042</div>
+      <svg id="ca-chart" viewBox="0 0 1012 250">
+        <defs><linearGradient id="ca-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3FA9F5" stop-opacity=".35"/><stop offset="1" stop-color="#3FA9F5" stop-opacity="0"/></linearGradient></defs>
+        <path id="ca-area-path" d="M0 210 L120 190 L240 200 L360 150 L480 160 L600 110 L720 120 L840 70 L1012 40 L1012 250 L0 250 Z" fill="url(#ca-area)"/>
+        <path id="ca-line-path" d="M0 210 L120 190 L240 200 L360 150 L480 160 L600 110 L720 120 L840 70 L1012 40" fill="none" stroke="#3FA9F5" stroke-width="5" stroke-linejoin="round"/>
+      </svg>
+      <div class="ca-stat" style="left:44px">Расходы<b>1 100 000</b></div>
+      <div class="ca-stat" style="left:420px">Прибыль<b>2 300 000</b></div>
+    </div>
+
+    <div id="ca-stock" class="ca-panel">
+      <div class="ca-head">Сырьё</div>
+      <div class="ca-chip">Кофейня</div>
+      <div class="ca-row" style="top:110px"><span>Зерно, арабика</span><span id="ca-bar"><i></i><b id="ca-kg">12 кг</b></span><span><span id="ca-status-ok" class="ok">В наличии</span><span id="ca-status-low" class="low">Мало</span></span></div>
+      <div class="ca-row" style="top:210px"><span>Молоко 3,2%</span><span class="mono">18 л</span><span class="ok" style="justify-self:start">В наличии</span></div>
+      <div class="ca-row" style="top:310px"><span>Стаканы 350 мл</span><span class="mono">640 шт</span><span class="ok" style="justify-self:start">В наличии</span></div>
+      <div id="ca-po"><h4>Заказ поставщику сформирован</h4><p>Зерно, арабика · 20 кг · Coffee Import</p><p>Создан автоматически</p><span class="info">Отправлен</span></div>
+    </div>
+
+    <div id="ca-sup">
+      <div id="ca-avatar">CI</div>
+      <h3>Coffee Import</h3>
+      <div class="sub">Поставщик зерна</div>
+      <div class="ca-sup-row" style="top:200px"><span>Последняя цена</span><b class="mono">210 000 сум/кг</b></div>
+      <div class="ca-sup-row" style="top:300px"><span>Доставка</span><b>завтра, 10:00</b></div>
+      <div class="ca-sup-row" style="top:400px"><span>Заказов в этом году</span><b class="mono">14</b></div>
+    </div>
+
+    <svg id="ca-bag" viewBox="0 0 300 420">
+      <path d="M38 64 L262 64 L284 404 Q285 418 271 418 L29 418 Q15 418 16 404 Z" fill="#C89B6C"/>
+      <path d="M38 64 L262 64 L252 18 Q249 6 236 6 L64 6 Q51 6 48 18 Z" fill="#A87D52"/>
+      <rect x="25" y="214" width="250" height="104" fill="#0B3A8C"/>
+      <image href="assets/mark-white.svg" x="122" y="226" width="56" height="42"/>
+      <text x="150" y="300" text-anchor="middle" font-family="Onest" font-weight="700" font-size="28" letter-spacing="6" fill="#FFFFFF">COFFEE</text>
+    </svg>
+    <svg id="ca-cursor" viewBox="0 0 64 64"><path d="M10 4 L10 52 L22 41 L31 60 L40 56 L31 37 L48 37 Z" fill="#0B0C10" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/></svg>
+
+    <h1 id="ca-ta" class="ca-title"><span class="w">Своя</span> <span class="w accent">касса</span></h1>
+    <h1 id="ca-tb" class="ca-title"><span class="w">Доходы</span> <span class="w">и&nbsp;расходы</span> <span class="w accent">на&nbsp;сегодня</span></h1>
+    <h1 id="ca-tc" class="ca-title"><span class="w">Сырьё</span> <span class="w">кончается —</span> <span class="w">заказ</span> <span class="w accent">уже&nbsp;отправлен</span></h1>
+    <h1 id="ca-td" class="ca-title"><span class="w">Поставщики</span> <span class="w accent">под&nbsp;рукой</span></h1>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    const wordsIn = (sel, at) => tl.fromTo(sel + " .w", { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" }, at);
+    const titleOut = (sel, at) => tl.to(sel, { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, at);
+    const swapOut = (sel, at) => tl.to(sel, { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power2.in" }, at);
+    const swapIn = (sel, at) => tl.fromTo(sel, { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, at);
+    const click = at => {
+      tl.to("#ca-cursor", { scale: .88, duration: 0.05 }, at);
+      tl.to("#ca-cursor", { scale: 1, duration: 0.08 }, at + 0.05);
+    };
+
+    // a. POS: tap Капучино, then Оплатить; the receipt prints.
+    tl.fromTo("#ca-pos", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 0.1);
+    wordsIn("#ca-ta", 0.4);
+    tl.fromTo("#ca-cursor", { x: 1960, y: 1100 }, { x: 838, y: 330, duration: 0.55, ease: "power3.out" }, 0.55);
+    click(1.1);
+    tl.fromTo("#ca-t1", { backgroundColor: "#14161D" }, { backgroundColor: "#0B3A8C", duration: 0.1 }, 1.1);
+    tl.to("#ca-t1", { backgroundColor: "#14161D", duration: 0.4 }, 1.35);
+    tl.fromTo(["#ca-line", "#ca-total"], { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.25, stagger: 0.06, ease: "expo.out" }, 1.15);
+    tl.to("#ca-cursor", { x: 1600, y: 822, duration: 0.45, ease: "power2.inOut" }, 1.3);
+    click(1.8);
+    tl.to("#ca-pay", { backgroundColor: "#3FA9F5", color: "#FFFFFF", duration: 0.08 }, 1.8);
+    tl.fromTo("#ca-receipt", { opacity: 0, y: 160, scale: .6 }, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: "back.out(1.3)" }, 1.9);
+    tl.to("#ca-cursor", { x: 1960, y: 1100, duration: 0.3, ease: "power3.in" }, 2.2);
+    titleOut("#ca-ta", 2.75);
+
+    // b. Money: the receipt flies into the day's revenue, which ticks up.
+    swapOut("#ca-pos", 2.85);
+    swapIn("#ca-money", 3.0);
+    tl.to("#ca-receipt", { x: -560, y: -150, scale: .25, opacity: 0, duration: 0.45, ease: "power3.in" }, 2.95);
+    const rev = { v: 3372000 };
+    tl.fromTo(rev, { v: 3372000 }, { v: 3400000, duration: 0.6, ease: "power2.out",
+      onUpdate: () => { document.querySelector("#ca-rev").textContent = Math.round(rev.v).toLocaleString("ru-RU"); } }, 3.4);
+    tl.fromTo("#ca-rev-up", { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.8)" }, 3.45);
+    const line = document.querySelector("#ca-line-path"), ll = line.getTotalLength();
+    tl.fromTo(line, { strokeDasharray: ll, strokeDashoffset: ll }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" }, 3.2);
+    tl.fromTo("#ca-area-path", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 3.6);
+    wordsIn("#ca-tb", 3.1);
+    titleOut("#ca-tb", 5.65);
+
+    // c. Raw stock: beans run low, the order to the supplier is created by itself.
+    swapOut("#ca-money", 5.8);
+    swapIn("#ca-stock", 5.95);
+    wordsIn("#ca-tc", 6.05);
+    const kg = { v: 12 };
+    tl.fromTo(kg, { v: 12 }, { v: 2, duration: 1.0, ease: "power2.inOut",
+      onUpdate: () => { document.querySelector("#ca-kg").textContent = Math.round(kg.v) + " кг"; } }, 6.4);
+    tl.fromTo("#ca-bar i", { scaleX: 1, backgroundColor: "#4ADE80" }, { scaleX: 2 / 12, backgroundColor: "#F0A03C", duration: 1.0, ease: "power2.inOut" }, 6.4);
+    tl.to("#ca-status-ok", { opacity: 0, duration: 0.1 }, 7.2);
+    tl.fromTo("#ca-status-low", { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, 7.2);
+    tl.fromTo("#ca-po", { opacity: 0, y: -30 }, { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }, 7.35);
+    titleOut("#ca-tc", 9.0);
+
+    // d. Supplier card on top of the order.
+    swapOut("#ca-stock", 9.15);
+    tl.fromTo("#ca-sup", { opacity: 0, x: 120 }, { opacity: 1, x: 0, duration: 0.5, ease: "expo.out" }, 9.2);
+    wordsIn("#ca-td", 9.3);
+    tl.fromTo(".ca-sup-row", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.08, ease: "expo.out" }, 9.45);
+    titleOut("#ca-td", 10.45);
+    // The pack moves on to the supermarket.
+    tl.fromTo("#ca-bag", { x: -260 }, { x: 2100, duration: 0.6, ease: "power2.in" }, 10.4);
+    window.__timelines["cafe"] = tl;
+  </script>
+</template>

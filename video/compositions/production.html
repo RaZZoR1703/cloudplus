@@ -1,0 +1,87 @@
+<template>
+  <style>
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-cyrillic.woff2") format("woff2"); unicode-range: U+0400-04FF; font-weight: 100 900; }
+    @font-face { font-family: "Onest"; src: url("assets/fonts/onest-latin.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist"; src: url("assets/fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    @font-face { font-family: "Geist Mono"; src: url("assets/fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; }
+    #root { position: absolute; inset: 0; overflow: hidden; background: #F4E7DC; font-family: "Geist", sans-serif; }
+    #pr-light { position: absolute; inset: 0; background: radial-gradient(1000px 700px at 300px 300px, rgba(255,255,255,.7), rgba(255,255,255,0) 70%); }
+    #pr-title { position: absolute; left: 120px; top: 380px; width: 540px; color: #0A1B33; font-family: "Onest", sans-serif; font-size: 76px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.08; }
+    #pr-title .w { display: inline-block; }
+    #pr-title .accent { color: #0B3A8C; }
+    #pr-panel { position: absolute; inset: 0; background: #0B0C10; clip-path: inset(0px 0px 0px 0px round 0px); }
+    #pr-ui { position: absolute; left: 700px; top: 170px; width: 1100px; height: 740px; color: #fff; }
+    #pr-head { position: absolute; left: 44px; top: 36px; font-size: 36px; font-weight: 600; }
+    #pr-today { position: absolute; right: 44px; top: 40px; font-size: 28px; color: #9A9EAA; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; padding: 6px 18px; }
+    .pr-hour { position: absolute; top: 118px; font-family: "Geist Mono", monospace; font-size: 24px; color: #9A9EAA; }
+    .pr-line { position: absolute; top: 160px; bottom: 40px; width: 1px; background: rgba(255,255,255,.08); }
+    #pr-card { position: absolute; left: 44px; top: 200px; width: 840px; height: 300px; background: #14161D; border: 1px solid rgba(255,255,255,.1); border-radius: 24px; padding: 32px 36px; }
+    #pr-card h3 { font-size: 38px; font-weight: 600; }
+    #pr-card p { margin-top: 10px; font-size: 28px; color: #9A9EAA; }
+    #pr-track { position: absolute; left: 36px; right: 36px; top: 168px; height: 12px; background: rgba(255,255,255,.08); border-radius: 6px; overflow: hidden; }
+    #pr-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 100%; background: #3FA9F5; border-radius: 6px; transform-origin: 0 50%; }
+    #pr-chip { position: absolute; left: 36px; bottom: 30px; font-size: 28px; color: #4ADE80; background: rgba(31,157,85,.16); border-radius: 999px; padding: 8px 20px; }
+    #pr-ship { position: absolute; right: 30px; bottom: 24px; font-size: 28px; font-weight: 600; color: #0B0C10; background: #fff; border-radius: 999px; padding: 12px 30px; }
+    #pr-card2 { position: absolute; left: 884px; top: 530px; width: 190px; height: 160px; background: #14161D; border: 1px solid rgba(255,255,255,.1); border-radius: 20px; padding: 20px; font-size: 28px; }
+    #pr-card2 span { display: block; margin-top: 8px; color: #9A9EAA; font-size: 28px; }
+    #pr-card3 { position: absolute; left: 44px; top: 530px; width: 820px; height: 150px; background: #14161D; border: 1px dashed rgba(255,255,255,.18); border-radius: 20px; padding: 22px 24px; }
+    #pr-card3 h3 { font-size: 28px; font-weight: 600; }
+    #pr-card3 p { margin-top: 10px; font-size: 28px; color: #9A9EAA; line-height: 1.3; }
+    #pr-cursor { position: absolute; left: 0; top: 0; width: 64px; height: 64px; }
+    #pr-bag { position: absolute; left: 1380px; top: 690px; width: 180px; height: 252px; filter: drop-shadow(0 18px 24px rgba(10,27,51,.25)); }
+  </style>
+  <div id="root" data-composition-id="production" data-width="1920" data-height="1080">
+    <div id="pr-light"></div>
+    <div id="pr-panel"></div>
+    <div id="pr-ui">
+      <div id="pr-head">Производство</div>
+      <div id="pr-today">Сегодня</div>
+      <div class="pr-hour" style="left:44px">09:00</div><div class="pr-hour" style="left:284px">10:00</div>
+      <div class="pr-hour" style="left:524px">11:00</div><div class="pr-hour" style="left:764px">12:00</div>
+      <div class="pr-hour" style="left:1004px">13:00</div>
+      <div class="pr-line" style="left:44px"></div><div class="pr-line" style="left:284px"></div><div class="pr-line" style="left:524px"></div>
+      <div class="pr-line" style="left:764px"></div><div class="pr-line" style="left:1004px"></div>
+      <div id="pr-card">
+        <h3>Партия №147 · обжарка</h3>
+        <p>09:00 – 12:30 · цех 1 · 240 кг</p>
+        <div id="pr-track"><div id="pr-fill"></div></div>
+        <div id="pr-chip">Себестоимость ниже плана на 6%</div>
+        <div id="pr-ship">Отгрузить</div>
+      </div>
+      <div id="pr-card2">Фасовка<span>13:00</span><span>цех 2</span></div>
+      <div id="pr-card3"><h3>Партия №148 · обжарка</h3><p>12:30 – 16:00 · цех 1 · 180 кг · в плане</p></div>
+    </div>
+    <svg id="pr-bag" viewBox="0 0 300 420">
+      <path d="M38 64 L262 64 L284 404 Q285 418 271 418 L29 418 Q15 418 16 404 Z" fill="#C89B6C"/>
+      <path d="M38 64 L262 64 L252 18 Q249 6 236 6 L64 6 Q51 6 48 18 Z" fill="#A87D52"/>
+      <rect x="25" y="214" width="250" height="104" fill="#0B3A8C"/>
+      <image href="assets/mark-white.svg" x="122" y="226" width="56" height="42"/>
+      <text x="150" y="300" text-anchor="middle" font-family="Onest" font-weight="700" font-size="28" letter-spacing="6" fill="#FFFFFF">COFFEE</text>
+    </svg>
+    <svg id="pr-cursor" viewBox="0 0 64 64"><path d="M10 4 L10 52 L22 41 L31 60 L40 56 L31 37 L48 37 Z" fill="#0B0C10" stroke="#FFFFFF" stroke-width="3" stroke-linejoin="round"/></svg>
+    <h1 id="pr-title"><span class="w">Производство:</span> <span class="w">план</span> <span class="w accent">по&nbsp;часам</span></h1>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // The scale display (full frame at the cut) settles into the production panel.
+    tl.fromTo("#pr-panel", { clipPath: "inset(0px 0px 0px 0px round 0px)" },
+      { clipPath: "inset(170px 120px 170px 700px round 24px)", duration: 0.65, ease: "power3.inOut" }, 0);
+    tl.fromTo("#pr-ui", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power2.out" }, 0.45);
+    tl.fromTo("#pr-card", { opacity: 0, x: -40 }, { opacity: 1, x: 0, duration: 0.5, ease: "expo.out" }, 0.6);
+    tl.fromTo(["#pr-card3", "#pr-card2"], { opacity: 0, x: -30 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.08, ease: "expo.out" }, 0.75);
+    tl.fromTo("#pr-fill", { scaleX: 0 }, { scaleX: 1, duration: 2.0, ease: "power1.inOut" }, 0.9);
+    tl.fromTo("#pr-chip", { opacity: 0, scale: .9 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(1.6)" }, 2.2);
+    tl.fromTo("#pr-title .w", { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" }, 0.5);
+    // Cursor clicks «Отгрузить»; the pack leaves for the warehouse.
+    tl.fromTo("#pr-cursor", { x: 1960, y: 1100 }, { x: 1444, y: 612, duration: 0.7, ease: "power3.out" }, 2.8);
+    tl.to("#pr-cursor", { scale: .88, duration: 0.05 }, 3.6);
+    tl.to("#pr-cursor", { scale: 1, duration: 0.08 }, 3.65);
+    tl.to("#pr-ship", { backgroundColor: "#3FA9F5", color: "#FFFFFF", duration: 0.08 }, 3.6);
+    tl.fromTo("#pr-bag", { opacity: 0, scale: .4, y: 120 }, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "back.out(1.4)" }, 3.65);
+    tl.to("#pr-cursor", { x: 1960, y: 1100, duration: 0.3, ease: "power3.in" }, 3.9);
+    tl.to("#pr-title", { opacity: 0, filter: "blur(8px)", duration: 0.2, ease: "power3.in" }, 4.3);
+    tl.to("#pr-bag", { x: 760, duration: 0.45, ease: "power3.in" }, 4.5);   // whip out to the right; the next scene catches it
+    window.__timelines["production"] = tl;
+  </script>
+</template>
