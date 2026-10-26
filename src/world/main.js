@@ -38,7 +38,7 @@ const camera = new THREE.PerspectiveCamera(34, 1, .1, 900);
 const sky = createSky();
 const sea = createCloudSea();
 const motes = createMotes(small ? 350 : 700);
-const cloud = createBlockCloud();
+const cloud = createBlockCloud({ animateIn: !still });
 scene.add(sky, sea.mesh, motes.mesh, cloud.group);
 
 // Night light for the cloud above; morning light for the world below.
@@ -157,8 +157,10 @@ function orbitBlend(a, b, k) {
   return { pos: orbitPos(lerp(a.lat, b.lat, k), a.lon + dlon * k, lerp(a.dist, b.dist, k) + lift), look: new THREE.Vector3().lerpVectors(a.look, b.look, k), up: new THREE.Vector3().lerpVectors(a.up, b.up, k).normalize() };
 }
 
-const pointer = { x: 0, y: 0 }, lean = { x: 0, y: 0 };
-addEventListener('pointermove', e => { pointer.x = e.clientX / innerWidth - .5; pointer.y = e.clientY / innerHeight - .5; });
+const pointer = { x: 0, y: 0, on: 0 }, lean = { x: 0, y: 0, on: 0 };
+// Only a mouse hovers: a touch would leave a dent of light stuck where the finger lifted.
+addEventListener('pointermove', e => { pointer.x = e.clientX / innerWidth - .5; pointer.y = e.clientY / innerHeight - .5; pointer.on = e.pointerType === 'mouse' ? 1 : 0; });
+document.documentElement.addEventListener('pointerleave', () => { pointer.on = 0; });
 function heroPose(p, t) {
   const pull = smooth(0, .45, p), explode = smooth(.45, 1, p);
   const orbit = Math.sin(t * .07) * .22 + lean.x * .35;
@@ -197,6 +199,7 @@ gsap.ticker.add(time => {
   const t = still ? 0 : time;
   lean.x += (pointer.x - lean.x) * .04;
   lean.y += (pointer.y - lean.y) * .04;
+  lean.on += (pointer.on - lean.on) * .05;
   const w = where();
   let target, explode = 1, day = 1, overlayKey = null, overlayAmt = 0;
 
@@ -256,7 +259,7 @@ gsap.ticker.add(time => {
   grade.uniforms.uVeil.value = Math.exp(-Math.pow((camera.position.y + 7) / 3.2, 2)) * .9;
 
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
-  cloud.update(explode, t);
+  cloud.update(explode, t, still ? undefined : lean);
   sea.update(t, 1 - explode * .7);
   motes.update(t, renderer.getPixelRatio());
   if (planet) {
