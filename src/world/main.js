@@ -84,8 +84,11 @@ let ranges = [];
 function measure() {
   ranges = sections.map(el => ({ phase: el.dataset.phase, key: el.dataset.business, top: el.offsetTop, span: Math.max(1, el.offsetHeight - innerHeight) }));
 }
+// The scene follows a softened copy of the scroll, so a flick of the wheel or a fast swipe still
+// plays every transition through instead of jumping (touch scrolling is not smoothed by Lenis).
+let softY = scrollY, softAt = 0;
 function where() {
-  const y = scrollY;
+  const y = softY;
   for (let i = ranges.length - 1; i >= 0; i--)
     if (y >= ranges[i].top || i === 0) return { ...ranges[i], p: Math.min(1, Math.max(0, (y - ranges[i].top) / ranges[i].span)) };
 }
@@ -230,6 +233,8 @@ let first = true;
 gsap.ticker.add(time => {
   const t = still ? 0 : time;
   watchFrames(time);
+  softY = still ? scrollY : softY + (scrollY - softY) * (1 - Math.exp(-(time - softAt) * 3.5));
+  softAt = time;
   lean.x += (pointer.x - lean.x) * .04;
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
@@ -250,9 +255,9 @@ gsap.ticker.add(time => {
   } else if (w.phase === 'chapter') {
     const idx = SHAPES.indexOf(w.key);
     target = orbitPose(w.p, turns[idx]);
-    river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .4, w.p) : 1);
+    river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .5, w.p) : 1);
     overlayKey = w.key;
-    overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.9, .98, w.p));
+    overlayAmt = smooth(.4, .52, w.p) * (1 - smooth(.9, .98, w.p));
   } else {
     const o = orbitPose(1, turns[3]), k = smooth(0, .6, w.p);
     target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the wordmark rides high, above the closing copy
