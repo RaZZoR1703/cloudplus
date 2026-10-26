@@ -8,7 +8,7 @@ const PUFFS = [
   [-.2, -.35, .45, 1.2], [1.4, -.45, .5, 1.0], [-1.4, -.5, .55, .95], [.2, .1, -.7, 1.3],
 ];
 const BASE_Y = -1.25, STEP = .4;
-export const MODULES = ['Склад', 'Касса', 'Финансы', 'CRM', 'Производство', 'Зарплата'];
+export const MODULES = ['Склад', 'Касса', 'Финансы', 'Продажи', 'Производство', 'Зарплата'];
 
 let seed = 11;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -28,6 +28,21 @@ function labelTexture(text) {
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
   return t;
+}
+
+const tileGeometry = new RoundedBoxGeometry(1.05, 1.05, .32, 4, .12);
+let tileGlass = null;
+
+/** A module tile: a slab of bright frosted glass with the module's name on its face. */
+export function createModuleTile(name, glass) {
+  tileGlass ??= glass;
+  const tile = new THREE.Mesh(tileGeometry, tileGlass);
+  const label = new THREE.Mesh(new THREE.PlaneGeometry(.92, .46), new THREE.MeshBasicMaterial({
+    map: labelTexture(name), transparent: true, depthWrite: false, toneMapped: false,
+  }));
+  label.position.z = .17;
+  tile.add(label);
+  return tile;
 }
 
 /**
@@ -76,14 +91,9 @@ export function createBlockCloud() {
     // Find the cloud's front surface at (x, y) and sit the tile on it.
     let z = 2.2;
     while (z > -2 && !solid(x, y, z)) z -= .05;
-    const tile = new THREE.Mesh(new RoundedBoxGeometry(1.05, 1.05, .32, 4, .12), tileGlass);
-    const label = new THREE.Mesh(new THREE.PlaneGeometry(.92, .46), new THREE.MeshBasicMaterial({
-      map: labelTexture(MODULES[i]), transparent: true, depthWrite: false, toneMapped: false,
-    }));
-    label.position.z = .17;
-    tile.add(label);
+    const tile = createModuleTile(MODULES[i], tileGlass);
     tile.userData = {
-      base: new THREE.Vector3(x, y, z + .05), label,
+      base: new THREE.Vector3(x, y, z + .05),
       rot: new THREE.Euler((rand() - .5) * .1, (rand() - .5) * .25, (rand() - .5) * .08),
       dir: new THREE.Vector3(x * .35, y * .5 + .2, 1).normalize(),
     };

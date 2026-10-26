@@ -11,25 +11,32 @@ export const PALETTE = {
   zenith: new THREE.Color('#03060d'),
   horizon: new THREE.Color('#1a2a40'),
   glow: new THREE.Color('#5d86b8'),
+  // Below the clouds: an early-morning sky, cool above, peach at the horizon.
+  dayZenith: new THREE.Color('#6fa3d6'),
+  dayHorizon: new THREE.Color('#d6e7f5'),
+  dayGlow: new THREE.Color('#ffd7b0'),
 };
 
 /** Night sky with a soft glow behind the cloud and sparse stars. */
 export function createSky() {
   return new THREE.Mesh(new THREE.SphereGeometry(400, 48, 24), new THREE.ShaderMaterial({
     side: THREE.BackSide, depthWrite: false, fog: false,
-    uniforms: { uZenith: { value: PALETTE.zenith }, uHorizon: { value: PALETTE.horizon }, uGlow: { value: PALETTE.glow } },
+    uniforms: { uZenith: { value: PALETTE.zenith }, uHorizon: { value: PALETTE.horizon }, uGlow: { value: PALETTE.glow },
+      uDZenith: { value: PALETTE.dayZenith }, uDHorizon: { value: PALETTE.dayHorizon }, uDGlow: { value: PALETTE.dayGlow }, uDay: { value: 0 } },
     vertexShader: 'varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
-    fragmentShader: `uniform vec3 uZenith, uHorizon, uGlow; varying vec3 vDir; ${NOISE}
+    fragmentShader: `uniform vec3 uZenith, uHorizon, uGlow, uDZenith, uDHorizon, uDGlow; uniform float uDay; varying vec3 vDir; ${NOISE}
       void main(){
-        float h = clamp(vDir.y * 2.2 + .15, 0., 1.);
-        vec3 c = mix(uHorizon, uZenith, pow(h, .7));
-        // A wide glow low in the sky behind the cloud.
+        // By day the camera circles a planet and looks down as often as up, so the blue wraps both ways.
+        float h = clamp(mix(vDir.y, abs(vDir.y), uDay) * 2.2 + .15, 0., 1.);
+        vec3 zen = mix(uZenith, uDZenith, uDay), hor = mix(uHorizon, uDHorizon, uDay), glo = mix(uGlow, uDGlow, uDay);
+        vec3 c = mix(hor, zen, pow(h, .7));
+        // A wide glow low in the sky behind the cloud (the sunrise, below the clouds).
         float g = exp(-pow(atan(vDir.x, -vDir.z) * 1.4, 2.)) * exp(-pow((vDir.y - .02) * 5., 2.));
-        c += uGlow * g * .35;
+        c += glo * g * mix(.35, .6, uDay);
         // Stars: tiny, sparse, only high up.
         vec2 sp = vDir.xz / (vDir.y + 1.2) * 320.;
         // Round, sub-cell stars instead of whole grid cells.
-        float st = step(.9975, hash(floor(sp))) * smoothstep(.12, .0, length(fract(sp) - .5)) * smoothstep(.15, .5, vDir.y);
+        float st = step(.9975, hash(floor(sp))) * smoothstep(.12, .0, length(fract(sp) - .5)) * smoothstep(.15, .5, vDir.y) * (1. - uDay);
         c += st * .55;
         gl_FragColor = vec4(c, 1.);
       }`,
