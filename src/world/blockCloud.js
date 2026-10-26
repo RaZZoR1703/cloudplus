@@ -212,7 +212,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
     tile.add(screen.mesh);
     tile.userData = {
       screen,
-      base: new THREE.Vector3(x, y, z + .05),
+      base: new THREE.Vector3(x, y, z + .5),   // well clear of the blocks, so tilting never cuts into them
       rot: new THREE.Euler((rand() - .5) * .1, (rand() - .5) * .25, (rand() - .5) * .08),
       dir: new THREE.Vector3(x * .35, y * .5 + .2, 1).normalize(),
       delay: 1.5 + i * .14,
