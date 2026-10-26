@@ -50,7 +50,7 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, extra = [] })
       }
     }
   }
-  for (const e of extra) for (let j = 0; j < e.count; j++) put(...e.at(j), 1);
+  for (const e of extra) for (let j = 0; j < e.count; j++) put(...e.at(j), e.kind ?? 1);
   for (let j = 0; j < nSmoke; j++) {
     const [cx, cy, cz, r] = smoke[j % smoke.length];
     put(cx + (rand() - .5) * r, cy, cz + (rand() - .5) * r, 2);
@@ -91,13 +91,24 @@ function text(n, words, width) {
 }
 
 function shapes(n) {
-  const racks = [];
-  for (const z of [-3.2, 0, 3.2]) {
-    for (let x = -5; x <= 5; x += 2.5) racks.push([x, 2.2, z, .12, 4.4, .12], [x, 2.2, z + 1.1, .12, 4.4, .12]);
-    for (const y of [.15, 1.6, 3.05, 4.4]) racks.push([0, y, z, 10.2, .1, .1], [0, y, z + 1.1, 10.2, .1, .1]);
-    for (let x = -3.75; x <= 3.75; x += 2.5) for (const y of [.75, 2.2, 3.65])
-      if (rand() < .85) racks.push([x + (rand() - .5) * .3, y, z + .55, 1.7, .9 + rand() * .2, .95]);
-  }
+  // Warehouse: a gabled hangar with three roll-up dock doors, a forklift and pallets outside.
+  const pitch = Math.atan2(.9, 5), slope = Math.hypot(.9, 5);   // a low industrial pitch, not a house
+  const hangar = [[0, 2, -1, 10, 4, 7], [-2.5, 4.45, -1, slope, .1, 7.2, pitch], [2.5, 4.45, -1, slope, .1, 7.2, -pitch],
+    [0, .5, 3.2, 10.4, 1, 1.4],   // loading dock
+    ...[-3.3, 0, 3.3].map(x => [x, 2.45, 2.52, 2.4, 2.9, .04]),   // door frames
+    [-7, .8, 4.4, 1.6, .9, 1.2], [-7.4, 2.15, 4.4, .9, .08, 1.1], [-7.8, 1.5, 3.9, .07, 1.4, .07], [-7.8, 1.5, 4.9, .07, 1.4, .07],   // forklift body, roof guard, posts
+    [-6.1, 1.5, 4.4, .15, 2.6, 1], [-5.5, .12, 4.1, 1.1, .07, .12], [-5.5, .12, 4.7, 1.1, .07, .12],   // mast and forks
+    [-5.5, .25, 4.4, 1.2, .14, 1.1], [-5.5, .75, 4.4, 1.1, .85, 1],   // pallet with a load on the forks
+    ...[[5.6, 4.6], [6.9, 4.6], [5.6, 5.9]].flatMap(([x, z]) => [[x, .1, z, 1.2, .14, 1.1], [x, .62, z, 1.1, .9, 1]]),
+    [6.25, 1.55, 4.6, 1.1, .9, 1]];
+  const gable = j => {   // the triangle over each end wall
+    const x = (rand() - .5) * 10;
+    return [x, 4 + rand() * .9 * (1 - Math.abs(x) / 5), j % 2 ? 2.5 : -4.5];
+  };
+  const slats = j => {   // the doors' horizontal slats catch the light
+    const d = j % 3, row = Math.floor(rand() * 11);
+    return [(d - 1) * 3.3 + (rand() - .5) * 2.3, 1.1 + row * .25, 2.55];
+  };
   return {
     cloud: cloud(n),
     production: build(n, {
@@ -107,7 +118,12 @@ function shapes(n) {
       smoke: [[3.4, 7.9, -1.6, .5], [4.7, 6.9, -1.6, .4]],
       ground: .06,
     }),
-    warehouse: build(n, { boxes: racks, ground: .06 }),
+    warehouse: build(n, {
+      boxes: hangar,
+      cyls: [[-7.6, .32, 4.4, .32, 1.3, 'z'], [-6.5, .32, 4.4, .32, 1.3, 'z']],
+      extra: [{ count: Math.floor(n * .05), at: gable, kind: 0 }, { count: Math.floor(n * .06), at: slats }],
+      ground: .06,
+    }),
     distribution: build(n, {
       boxes: [[-4.6, 1.75, 0, 2.2, 2.3, 2.4], [-4.9, 2.4, 0, 1.4, 1, 2.2, .35], [1.2, 2.25, 0, 7.6, 3.3, 2.6], [-1, .55, 0, 11, .35, 1.4]],
       cyls: [-4.5, .3, 3.3, 4.5].flatMap(x => [[x, .62, 1.15, .62, .45, 'z'], [x, .62, -1.15, .62, .45, 'z']]),
