@@ -10,7 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { createBlockCloud } from './blockCloud.js';
 import { createSky, createCloudSea, createMotes, PALETTE } from './atmosphere.js';
-import { createParticles } from './particles.js';
+import { createParticles, createAmbience } from './particles.js';
 
 gsap.registerPlugin(ScrollTrigger);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -46,6 +46,8 @@ scene.add(moon, new THREE.HemisphereLight('#4a6a96', '#0b1220', .6));
 // ---------- The particle river: the cloud's dust becomes each business in turn ----------
 const river = createParticles(small ? 60000 : 140000);
 scene.add(river.points);
+const ambience = createAmbience(small ? 12000 : 30000);
+scene.add(ambience.points);
 const SHAPES = ['production', 'warehouse', 'distribution', 'retail'];
 
 // ---------- Post ----------
@@ -205,6 +207,11 @@ gsap.ticker.add(time => {
   ray.ray.intersectPlane(plane, u.uMouse.value);
   u.uView.value.copy(view);
   u.uMouseOn.value = still ? 0 : lean.on;
+  const am = ambience.uniforms;
+  am.uTime.value = t;
+  am.uSize.value = u.uSize.value;
+  am.uFocus.value = u.uFocus.value;
+  am.uReveal.value = w.phase === 'hero' ? reveal : 1;
   sea.update(t, 1 - explode * .7);
   motes.update(t, renderer.getPixelRatio());
   showOverlay(overlayKey, overlayAmt);

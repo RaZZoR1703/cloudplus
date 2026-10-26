@@ -220,3 +220,49 @@ export function createParticles(n) {
     },
   };
 }
+
+const ambientVertex = /* glsl */`
+attribute vec4 aSeed;   // x: stream (0) or dust (1), y: lane, z/w: offsets
+uniform float uTime, uSize, uFocus, uReveal;
+varying float vAlpha, vGlow;
+void main() {
+  vec3 p;
+  if (aSeed.x < .5) {
+    // Streams of data: ribbons of light that flow through the scene from one side to the other.
+    float h = fract(uTime * (.018 + aSeed.z * .012) + aSeed.w * 7.);
+    float x = mix(-48., 48., h), lane = aSeed.y;
+    p = vec3(x, 1.2 + lane * 2.6 + sin(x * .11 + lane * 2.3) * 1.6, -9. + lane * 7. + cos(x * .07 + lane) * 3.);
+    p += vec3(0., sin(aSeed.w * 40.) , cos(aSeed.w * 33.)) * (.15 + aSeed.z * .5);
+    vAlpha = smoothstep(0., .12, h) * smoothstep(1., .85, h);
+    vGlow = aSeed.z;
+  } else {
+    // Dust hanging deep in the night, drifting slowly.
+    p = vec3(aSeed.y * 90. - 45., aSeed.z * 16. - 1., aSeed.w * 70. - 40.);
+    p += vec3(sin(uTime * .05 + aSeed.w * 30.), sin(uTime * .07 + aSeed.y * 20.) * .6, cos(uTime * .04 + aSeed.z * 25.)) * 1.5;
+    vAlpha = .35;
+    vGlow = .2;
+  }
+  vec4 mv = modelViewMatrix * vec4(p, 1.);
+  float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);
+  gl_PointSize = uSize * (1. + blur * 2.2) / -mv.z;
+  vAlpha *= uReveal / (1. + blur * 3.);
+  gl_Position = projectionMatrix * mv;
+}`;
+
+/** Life around the shapes: flowing streams of light and drifting dust, so no frame is ever empty. */
+export function createAmbience(n) {
+  const seeds = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const stream = i < n * .65;
+    seeds.set(stream ? [0, Math.floor(rand() * 3), rand(), rand()] : [1, rand(), rand(), rand()], i * 4);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  geo.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 4));
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 80);
+  const material = new THREE.ShaderMaterial({
+    vertexShader: ambientVertex, fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 } },
+  });
+  return { points: new THREE.Points(geo, material), uniforms: material.uniforms };
+}
