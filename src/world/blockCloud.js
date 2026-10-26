@@ -11,7 +11,7 @@ const BASE_Y = -1.25, STEP = .4;
 
 let seed = 11;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-const solid = (x, y, z) => y >= BASE_Y && PUFFS.some(([cx, cy, cz, r]) => (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2 < r * r);
+export const solid = (x, y, z) => y >= BASE_Y && PUFFS.some(([cx, cy, cz, r]) => (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2 < r * r);
 
 export const tileGeometry = new RoundedBoxGeometry(1.05, 1.05, .32, 4, .12);
 

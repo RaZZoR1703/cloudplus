@@ -10,7 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 import { createBlockCloud } from './blockCloud.js';
 import { createSky, createCloudSea, createMotes, PALETTE } from './atmosphere.js';
-import { createProcessLine, CHAPTERS } from './process.js';
+import { createParticles } from './particles.js';
 
 gsap.registerPlugin(ScrollTrigger);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -43,13 +43,10 @@ const moon = new THREE.DirectionalLight('#c7dcff', 1.6);
 moon.position.set(-6, 9, 6);
 scene.add(moon, new THREE.HemisphereLight('#4a6a96', '#0b1220', .6));
 
-// ---------- The process line: one order through four businesses ----------
-const line = createProcessLine();
-line.group.position.set(8, -2.6, -2);
-scene.add(line.group);
-const at = new THREE.Vector3();
-/** Where the parcel is in the world, s in steps. */
-const parcelAt = s => line.curve.getPoint(Math.min(1, Math.max(0, s / line.last)), at).add(line.group.position);
+// ---------- The particle river: the cloud's dust becomes each business in turn ----------
+const river = createParticles(small ? 60000 : 140000);
+scene.add(river.points);
+const SHAPES = ['production', 'warehouse', 'distribution', 'retail'];
 
 // ---------- Post ----------
 const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
@@ -104,12 +101,13 @@ resize();
 
 // ---------- Camera poses ----------
 const Y = new THREE.Vector3(0, 1, 0);
-/** Following the parcel: on wide screens it sits right of centre, clear of the copy on the left. */
-function followPose(s) {
-  const p = parcelAt(s).clone();
-  return small
-    ? { pos: p.clone().add(new THREE.Vector3(0, 3.4, 14)), look: p.clone().add(new THREE.Vector3(1.5, -1.6, 0)) }
-    : { pos: p.clone().add(new THREE.Vector3(-1.5, 3.2, 13)), look: p.clone().add(new THREE.Vector3(-3.2, .6, 0)) };
+/** Circling the shape: the scroll turns the camera a little way round it while a chapter plays. */
+function orbitPose(p, turn = 0) {
+  const ang = turn + (p - .5) * .9, dist = small ? 38 : 29;
+  return {
+    pos: new THREE.Vector3(Math.sin(ang) * dist, 6.5 - p * 2, Math.cos(ang) * dist),
+    look: new THREE.Vector3(0, 2, 0),
+  };
 }
 
 const pointer = { x: 0, y: 0, on: 0 }, lean = { x: 0, y: 0, on: 0 };
@@ -144,7 +142,8 @@ gsap.fromTo('.hero-copy > *', { opacity: 0, y: 26, filter: 'blur(10px)' },
 // ---------- Loop ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
 const heroCopy = document.querySelector('.hero-copy');
-const order = CHAPTERS.map(c => c.key);
+const turns = [-.5, .4, -.3, .6];
+const ray = new THREE.Raycaster(), plane = new THREE.Plane(), view = new THREE.Vector3();
 let first = true;
 gsap.ticker.add(time => {
   const t = still ? 0 : time;
@@ -152,31 +151,32 @@ gsap.ticker.add(time => {
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
-  let target, explode = 1, s = 0, reveal = 1, overlayKey = null, overlayAmt = 0;
+  let target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
-    target = heroPose(w.p, t); explode = target.explode; reveal = 0;
+    target = heroPose(w.p, t); explode = target.explode; offset = 0;
     heroCopy.style.opacity = 1 - smooth(.3, .5, w.p);
+    // The glass shatters into dust: particles take over the cloud's shape as the blocks fly apart.
+    reveal = smooth(.25, .75, explode);
+    river.show('cloud', 'cloud', 1);
   } else if (w.phase === 'descend') {
-    // From the scattered cloud to the start of the line, which assembles on the way.
-    const h = heroPose(1, t), f = followPose(0), k = smooth(.1, 1, w.p);
-    target = { pos: h.pos.lerp(f.pos, k), look: h.look.lerp(f.look, k) };
-    reveal = smooth(0, .85, w.p);
+    const h = heroPose(1, t), o = orbitPose(0, turns[0]), k = smooth(0, 1, w.p);
+    target = { pos: h.pos.lerp(o.pos, k), look: h.look.lerp(o.look, k) };
+    offset *= k;
+    river.show('cloud', 'production', smooth(.1, .95, w.p));
   } else if (w.phase === 'chapter') {
-    // Each chapter carries the parcel from the previous business's last step through its own five.
-    const idx = order.indexOf(w.key);
-    s = idx * 5 - 1 + smooth(0, .9, w.p) * 5;
-    target = followPose(s);
+    const idx = SHAPES.indexOf(w.key);
+    target = orbitPose(w.p, turns[idx]);
+    river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .4, w.p) : 1);
     overlayKey = w.key;
-    overlayAmt = smooth(.08, .2, w.p) * (1 - smooth(.9, .98, w.p));
+    overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.9, .98, w.p));
   } else {
-    // Pull back until the whole line, all four businesses, is in view.
-    s = line.last;
-    const f = followPose(s), mid = parcelAt(line.last / 2).clone(), k = smooth(0, .7, w.p);
-    // Looking above the line keeps it low in the frame, under the closing copy.
-    target = { pos: f.pos.lerp(mid.clone().add(new THREE.Vector3(0, 22, small ? 120 : 82)), k), look: f.look.lerp(mid.clone().add(new THREE.Vector3(0, small ? 14 : 9, 0)), k) };
+    const o = orbitPose(1, turns[3]), k = smooth(0, .6, w.p);
+    target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the wordmark rides high, above the closing copy
+    offset *= 1 - k;
+    river.show('retail', 'outro', smooth(0, .5, w.p));
     overlayKey = 'outro';
-    overlayAmt = smooth(.45, .7, w.p);
+    overlayAmt = smooth(.55, .75, w.p);
   }
 
   // Ease the camera towards its target: the scroll is already smoothed, this removes jitter.
@@ -186,11 +186,25 @@ gsap.ticker.add(time => {
   camera.position.copy(camPos);
   camera.up.copy(Y);
   camera.lookAt(camLook);
+  // On wide screens the shape sits right of centre, clear of the chapter copy on the left.
+  camera.filmOffset += (offset - camera.filmOffset) * (still ? 1 : .08);
+  camera.updateProjectionMatrix();
 
   cloud.group.visible = w.phase === 'hero' || w.phase === 'descend';
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
   cloud.update(explode, t, still ? undefined : lean);
-  line.update(s, t, reveal);
+  const u = river.uniforms;
+  u.uTime.value = t;
+  u.uReveal.value = reveal;
+  u.uFocus.value = camPos.distanceTo(camLook);
+  u.uSize.value = (small ? 70 : 60) * renderer.getPixelRatio() * innerHeight / 900;
+  // The pointer's place in the scene, on the plane through the shape facing the camera.
+  camera.getWorldDirection(view);
+  plane.setFromNormalAndCoplanarPoint(view, camLook);
+  ray.setFromCamera({ x: lean.x * 2, y: -lean.y * 2 }, camera);
+  ray.ray.intersectPlane(plane, u.uMouse.value);
+  u.uView.value.copy(view);
+  u.uMouseOn.value = still ? 0 : lean.on;
   sea.update(t, 1 - explode * .7);
   motes.update(t, renderer.getPixelRatio());
   showOverlay(overlayKey, overlayAmt);
