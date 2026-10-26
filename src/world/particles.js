@@ -101,7 +101,7 @@ function text(n, words, width) {
 const WHEELS = [-4.5, 3.3];
 const PEOPLE = [[1.6, 3.1], [3.2, 3.5], [4.6, 3.0], [6.1, 3.4], [7.5, 3.2]];
 let truck = null;
-const truckLoaded = Promise.all(['truck-points.bin', 'truck-points.json'].map(f => fetch(`../world/${f}`)))
+const truckLoaded = Promise.all(['truck-points.bin', 'truck-points.json'].map(f => fetch(`./world/${f}`)))
   .then(async ([bin, json]) => { if (bin.ok && json.ok) truck = { pts: new Int16Array(await bin.arrayBuffer()), ...await json.json() }; })
   .catch(() => {});
 
@@ -206,7 +206,7 @@ const vertexShader = /* glsl */`
 attribute vec4 aA;
 attribute vec4 aB;
 attribute float aRand;
-uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY;
+uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity;
 uniform vec2 uWheels;
 uniform vec3 uMouse, uView;
 varying float vAlpha, vGlow;
@@ -266,7 +266,8 @@ void main() {
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);   // depth of field: out of focus = bigger, fainter
   float edge = step(.5, kind) * step(kind, 1.5) + step(11.5, group) * step(group, 12.5);
   gl_PointSize = uSize * (1. + blur * 2.2) * (1. + edge * .35) / -mv.z;
-  vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.);
+  vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.) * inversesqrt(uDensity);
+  if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
   vGlow = max(edge, aRand * aRand);
   gl_Position = projectionMatrix * mv;
 }`;
@@ -297,7 +298,7 @@ export function createParticles(n) {
     uniforms: {
       uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 99) }, uMouseOn: { value: 0 }, uView: { value: new THREE.Vector3(0, 0, 1) },
-      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 },
+      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 },
     },
   });
   const points = new THREE.Points(geo, material);
@@ -319,7 +320,7 @@ export function createParticles(n) {
 
 const ambientVertex = /* glsl */`
 attribute vec4 aSeed;   // x: stream (0) or dust (1), y: lane, z/w: offsets
-uniform float uTime, uSize, uFocus, uReveal;
+uniform float uTime, uSize, uFocus, uReveal, uDensity;
 varying float vAlpha, vGlow;
 void main() {
   vec3 p;
@@ -342,6 +343,7 @@ void main() {
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);
   gl_PointSize = uSize * (1. + blur * 2.2) / -mv.z;
   vAlpha *= uReveal / (1. + blur * 3.);
+  if (aSeed.w > uDensity) gl_PointSize = 0.;
   gl_Position = projectionMatrix * mv;
 }`;
 
@@ -358,7 +360,7 @@ export function createAmbience(n) {
   geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 80);
   const material = new THREE.ShaderMaterial({
     vertexShader: ambientVertex, fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
-    uniforms: { uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 } },
+    uniforms: { uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 }, uDensity: { value: 1 } },
   });
   return { points: new THREE.Points(geo, material), uniforms: material.uniforms };
 }

@@ -2,91 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Cloudplus — программа, собранная под ваш бизнес</title>
-  <meta name="description" content="Cloudplus собирает программу под ваш бизнес из нужных модулей: склад, касса, финансы, продажи, производство. Рабочая версия через 14 дней.">
-  <meta name="theme-color" content="#050a14">
-  <link rel="icon" href="../mark-blue.svg" type="image/svg+xml">
-  <link rel="preload" href="../fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../src/world/style.css">
+  <title>Cloudplus</title>
+  <!-- The preview at /next/ became the main page; old links land there. -->
+  <meta http-equiv="refresh" content="0; url=../">
 </head>
-<body>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="Cloudplus, в начало"><img src="../mark-white.svg" alt="" width="40" height="30"><span>Cloudplus</span></a>
-    <a class="pill" href="https://cloudplus.uz/">Узнать стоимость</a>
-  </header>
-
-  <canvas id="world" aria-hidden="true"></canvas>
-
-  <!-- Chapter copy: fixed, shown by the scroll loop while its chapter plays -->
-  <div class="overlays">
-    <article class="ov" data-overlay="production">
-      <h2>Производство</h2>
-      <p class="ov-say">Заказ сам становится планом цеха, а&nbsp;готовая партия&nbsp;— остатком на&nbsp;складе</p>
-    </article>
-    <article class="ov" data-overlay="warehouse">
-      <h2>Склад</h2>
-      <p class="ov-say">Каждая паллета на&nbsp;своём месте, отбор идёт по&nbsp;заданию, а&nbsp;не&nbsp;по&nbsp;памяти</p>
-    </article>
-    <article class="ov" data-overlay="distribution">
-      <h2>Дистрибуция</h2>
-      <p class="ov-say">Заявки, маршруты, накладные и&nbsp;оплаты в&nbsp;одной цепочке</p>
-    </article>
-    <article class="ov" data-overlay="retail">
-      <h2>Розничная сеть</h2>
-      <p class="ov-say">Продажа на&nbsp;кассе сама списывает остаток и&nbsp;дозаказывает товар</p>
-    </article>
-    <!-- A live panel of the program, tied by a thread of light to the spot in the scene it describes -->
-    <aside class="panel" data-overlay="production" data-anchor="6.2,1.3,3.4">
-      <div class="panel-head"><b>Партия №148</b><span class="chip info">в&nbsp;работе</span></div>
-      <div class="panel-meta"><span>Выпущено</span><b class="num" data-count>640 из 1&nbsp;200</b></div>
-      <div class="bar"><i data-bar></i></div>
-      <div class="panel-row"><span data-row>Ящик 33 · линия 2</span><span class="chip" data-status>на ленте</span></div>
-    </aside>
-    <aside class="panel" data-overlay="warehouse" data-anchor="-3.3,3.4,2.6">
-      <div class="panel-head"><b>Приёмка №1137</b><span class="chip info">в&nbsp;работе</span></div>
-      <div class="panel-meta"><span>Принято мест</span><b class="num" data-count>17 из 24</b></div>
-      <div class="bar"><i data-bar></i></div>
-      <div class="panel-row"><span data-row>Паллета 18 · ячейка B-14</span><span class="chip" data-status>везут</span></div>
-    </aside>
-    <aside class="panel" data-overlay="distribution" data-anchor="-4.6,3.1,0">
-      <div class="panel-head"><b>Маршрут №58</b><span class="chip info">в&nbsp;пути</span></div>
-      <div class="panel-meta"><span>Доставлено точек</span><b class="num" data-count>7 из 12</b></div>
-      <div class="bar"><i data-bar></i></div>
-      <div class="panel-row"><span data-row>Точка 8 · прибытие 14:20</span><span class="chip" data-status>едет</span></div>
-    </aside>
-    <aside class="panel" data-overlay="retail" data-anchor="0,5.5,1.6">
-      <div class="panel-head"><b>Магазин №7 · касса</b><span class="chip info">смена открыта</span></div>
-      <div class="panel-meta"><span>Чеков сегодня</span><b class="num" data-count>312</b></div>
-      <div class="bar"><i data-bar></i></div>
-      <div class="panel-row"><span data-row>Кофе 250 г · 44 шт</span><span class="chip" data-status>в&nbsp;наличии</span></div>
-    </aside>
-    <svg class="thread" aria-hidden="true"><path/><circle r="4"/></svg>
-    <article class="ov ov-outro" data-overlay="outro">
-      <h2>Вся компания в&nbsp;одной программе</h2>
-      <p class="ov-say">Рабочая версия на&nbsp;ваших данных через 14&nbsp;дней. Цена в&nbsp;договоре, исходный код у&nbsp;вас.</p>
-      <a class="cta" href="https://cloudplus.uz/">Узнать стоимость</a>
-    </article>
-  </div>
-
-  <main>
-    <section class="hero" id="top" data-phase="hero">
-      <div class="hero-stage">
-        <div class="hero-copy">
-          <h1>Программа, собранная под&nbsp;ваш бизнес</h1>
-          <p>Из тех модулей, которые нужны именно вам: склад, касса, финансы, продажи, производство. Рабочая версия через 14&nbsp;дней.</p>
-        </div>
-        <p class="cue" aria-hidden="true"><span></span>Листайте вниз</p>
-      </div>
-    </section>
-    <section class="descend" data-phase="descend"></section>
-    <section class="chapter" data-phase="chapter" data-business="production"></section>
-    <section class="chapter" data-phase="chapter" data-business="warehouse"></section>
-    <section class="chapter" data-phase="chapter" data-business="distribution"></section>
-    <section class="chapter" data-phase="chapter" data-business="retail"></section>
-    <section class="outro" data-phase="outro"></section>
-  </main>
-
-  <script type="module" src="../src/world/main.js"></script>
-</body>
+<body><a href="../">Cloudplus</a></body>
 </html>

@@ -189,8 +189,37 @@ function showOverlay(key, amount) {
   }
 }
 
-gsap.fromTo('.hero-copy > *', { opacity: 0, y: 26, filter: 'blur(10px)' },
-  { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, stagger: .14, ease: 'expo.out', delay: .4 });
+// ---------- Loading: the screen lifts once fonts are in and the first frames are drawn ----------
+let readyAt = -1;
+const loader = document.querySelector('.loader');
+renderer.compile(scene, camera);
+document.fonts.ready.then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+  readyAt = gsap.ticker.time;
+  loader?.classList.add('done');
+  setTimeout(() => loader?.remove(), 1200);
+  gsap.fromTo('.hero-copy > *', { opacity: 0, y: 26, filter: 'blur(10px)' },
+    { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.4, stagger: .14, ease: 'expo.out', delay: .5 });
+})));
+
+// ---------- Quality: start from the device's likely power, step down if frames run slow ----------
+const weak = (small && (navigator.deviceMemory ?? 4) <= 4) || (navigator.hardwareConcurrency ?? 8) <= 4;
+const quality = { density: weak ? .6 : 1, steps: 0, frames: 0, slow: 0, last: 0 };
+function watchFrames(time) {
+  const dt = time - quality.last;
+  quality.last = time;
+  if (readyAt < 0 || quality.steps >= 2 || time - readyAt < 1.5) return;
+  quality.frames++;
+  if (dt > 1 / 40) quality.slow++;
+  if (quality.frames < 90) return;
+  if (quality.slow > 40) {   // under ~40 fps for most of 1.5 s: fewer particles, fewer pixels
+    quality.steps++;
+    quality.density *= .6;
+    renderer.setPixelRatio(Math.max(.75, renderer.getPixelRatio() * .75));
+    composer.setPixelRatio(renderer.getPixelRatio());
+    resize();
+  }
+  quality.frames = quality.slow = 0;
+}
 
 // ---------- Loop ----------
 const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
@@ -200,6 +229,7 @@ const ray = new THREE.Raycaster(), plane = new THREE.Plane(), view = new THREE.V
 let first = true;
 gsap.ticker.add(time => {
   const t = still ? 0 : time;
+  watchFrames(time);
   lean.x += (pointer.x - lean.x) * .04;
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
@@ -245,9 +275,11 @@ gsap.ticker.add(time => {
 
   cloud.group.visible = w.phase === 'hero' && explode < .999;   // by then every block has shrunk to nothing
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
-  cloud.update(explode, t, still ? undefined : lean);
+  // The cloud builds itself only once the loading screen has lifted.
+  cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
   const u = river.uniforms;
   u.uTime.value = t;
+  u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
   u.uReveal.value = reveal;
   u.uFocus.value = camPos.distanceTo(camLook);
   u.uSize.value = (small ? 70 : 60) * renderer.getPixelRatio() * innerHeight / 900;

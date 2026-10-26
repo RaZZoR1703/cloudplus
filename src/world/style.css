@@ -75,6 +75,16 @@ main { position: relative; z-index: 2; }
 @keyframes flow { to { stroke-dashoffset: -20; } }
 @media (prefers-reduced-motion: reduce) { .thread path { animation: none; } }
 
+/* ---------- Loading screen ---------- */
+.loader { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; align-content: center; gap: 22px; background: #050a14; transition: opacity .9s var(--ease), visibility .9s; animation: loader-out .6s 10s forwards; }
+.loader img { width: 64px; height: auto; animation: breathe 1.8s ease-in-out infinite; }
+.loader i { width: 120px; height: 2px; border-radius: 1px; background: linear-gradient(90deg, transparent, var(--blue), transparent) 0 0 / 50% 100% no-repeat, rgba(255, 255, 255, .08); animation: sweep 1.2s linear infinite; }
+.loader.done { opacity: 0; visibility: hidden; }
+@keyframes breathe { 50% { opacity: .45; } }
+@keyframes sweep { from { background-position: -100% 0, 0 0; } to { background-position: 200% 0, 0 0; } }
+@keyframes loader-out { to { opacity: 0; visibility: hidden; } }   /* never trap the page if a script fails */
+@media (prefers-reduced-motion: reduce) { .loader img, .loader i { animation: none; } }
+
 @media (max-width: 820px) {
   .brand span { display: none; }
   .hero-copy { max-width: none; right: var(--pad); bottom: 9svh; }

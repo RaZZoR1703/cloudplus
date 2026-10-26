@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 // Relative base so the build works on GitHub Pages (/cloudplus/) and locally.
-// Two pages: the cinematic story at /, the earlier 3D city at /city/.
+// Pages: the particle river at /, the earlier 3D city at /city/; /next/ only redirects to /.
 // three.js alone is ~600 kB minified (~155 kB gzip), so raise the warning limit.
 export default defineConfig({
   base: './',
