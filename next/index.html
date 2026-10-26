@@ -18,58 +18,23 @@
 
   <canvas id="world" aria-hidden="true"></canvas>
 
-  <!-- Chapter overlays: fixed, shown by the scroll loop while their chapter plays -->
+  <!-- Chapter copy: fixed, shown by the scroll loop while its chapter plays -->
   <div class="overlays">
     <article class="ov" data-overlay="production">
       <h2>Производство</h2>
-      <p class="ov-say">Партия кофе уже в&nbsp;плане цеха</p>
-      <div class="ov-cards">
-        <div class="ui">
-          <div class="ui-head"><b>Производство</b><span class="chip">Сегодня</span></div>
-          <div class="ui-card"><b>Партия №147 · обжарка</b><span class="muted">09:00 – 12:30 · цех 1 · 240 кг</span><div class="track"><i style="width:68%"></i></div><span class="chip ok">Себестоимость ниже плана на 6%</span></div>
-          <div class="ui-row dim"><span>Партия №148 · обжарка</span><span class="muted">12:30 · в плане</span></div>
-        </div>
-        <figure class="reality"><video src="../world/clips/roast.mp4" muted loop playsinline preload="none"></video><figcaption>Так это выглядит в&nbsp;жизни</figcaption></figure>
-      </div>
+      <p class="ov-say">Заказ сам становится планом цеха, а&nbsp;готовая партия&nbsp;— остатком на&nbsp;складе</p>
     </article>
     <article class="ov" data-overlay="warehouse">
-      <h2>Склад и&nbsp;доставка</h2>
-      <p class="ov-say">Каждая паллета на&nbsp;своём месте, каждый фургон на&nbsp;карте</p>
-      <div class="ov-cards">
-        <div class="ui">
-          <div class="ui-head"><b>Склад</b><span class="chip ok">Принято</span></div>
-          <div class="ui-row hl"><span>Кофе 250&nbsp;г</span><span class="num">960 шт</span><span class="muted">ряд B · 14</span></div>
-          <div class="ui-row"><span>Чай чёрный</span><span class="num">420 шт</span><span class="muted">ряд B · 15</span></div>
-          <div class="ui-row"><span>Доставка №58</span><span class="num">40 коробок</span><span class="chip info">В пути</span></div>
-        </div>
-        <figure class="reality"><video src="../world/clips/forklift.mp4" muted loop playsinline preload="none"></video><figcaption>Так это выглядит в&nbsp;жизни</figcaption></figure>
-      </div>
+      <h2>Склад</h2>
+      <p class="ov-say">Каждая паллета на&nbsp;своём месте, отбор идёт по&nbsp;заданию, а&nbsp;не&nbsp;по&nbsp;памяти</p>
     </article>
-    <article class="ov" data-overlay="cafe">
-      <h2>Кофейня</h2>
-      <p class="ov-say">Своя касса, а&nbsp;зерно дозаказывается само</p>
-      <div class="ov-cards">
-        <div class="ui">
-          <div class="ui-head"><b>Касса</b><span class="chip">Смена открыта</span></div>
-          <div class="ui-row"><span>Капучино</span><span></span><span class="num">28 000</span></div>
-          <div class="ui-row hl"><span>Выручка сегодня</span><span></span><span class="num">3 400 000</span></div>
-          <div class="ui-order"><b>Заказ поставщику сформирован</b><span class="muted">Зерно, арабика · 20 кг · создан автоматически</span></div>
-        </div>
-        <figure class="reality"><video src="../world/clips/pay.mp4" muted loop playsinline preload="none"></video><figcaption>Так это выглядит в&nbsp;жизни</figcaption></figure>
-      </div>
+    <article class="ov" data-overlay="distribution">
+      <h2>Дистрибуция</h2>
+      <p class="ov-say">Заявки, маршруты, накладные и&nbsp;оплаты в&nbsp;одной цепочке</p>
     </article>
-    <article class="ov" data-overlay="store">
-      <h2>Магазин</h2>
-      <p class="ov-say">Остатки сходятся с&nbsp;продажами без пересчёта вручную</p>
-      <div class="ov-cards">
-        <div class="ui">
-          <div class="ui-head"><b>Продажи</b><span class="chip">Остатки</span></div>
-          <div class="ui-row hl"><span>Кофе 250&nbsp;г</span><span class="num">41 шт</span><span class="chip ok">В наличии</span></div>
-          <div class="ui-row"><span>Чай чёрный</span><span class="num">120 шт</span><span class="chip ok">В наличии</span></div>
-          <div class="ui-row"><span class="muted">Продано сегодня</span><span></span><span class="num">17</span></div>
-        </div>
-        <figure class="reality"><video src="../world/clips/store.mp4" muted loop playsinline preload="none"></video><figcaption>Так это выглядит в&nbsp;жизни</figcaption></figure>
-      </div>
+    <article class="ov" data-overlay="retail">
+      <h2>Розничная сеть</h2>
+      <p class="ov-say">Продажа на&nbsp;кассе сама списывает остаток и&nbsp;дозаказывает товар</p>
     </article>
     <article class="ov ov-outro" data-overlay="outro">
       <h2>Вся компания в&nbsp;одной программе</h2>
@@ -91,8 +56,8 @@
     <section class="descend" data-phase="descend"></section>
     <section class="chapter" data-phase="chapter" data-business="production"></section>
     <section class="chapter" data-phase="chapter" data-business="warehouse"></section>
-    <section class="chapter" data-phase="chapter" data-business="cafe"></section>
-    <section class="chapter" data-phase="chapter" data-business="store"></section>
+    <section class="chapter" data-phase="chapter" data-business="distribution"></section>
+    <section class="chapter" data-phase="chapter" data-business="retail"></section>
     <section class="outro" data-phase="outro"></section>
   </main>
 

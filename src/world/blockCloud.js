@@ -13,45 +13,17 @@ let seed = 11;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 const solid = (x, y, z) => y >= BASE_Y && PUFFS.some(([cx, cy, cz, r]) => (x - cx) ** 2 + (y - cy) ** 2 + (z - cz) ** 2 < r * r);
 
-function labelTexture(text) {
-  const c = document.createElement('canvas');
-  c.width = 1024; c.height = 512;
-  const x = c.getContext('2d');
-  x.fillStyle = '#0d2747';   // brand ink reads on the frosted white tiles
-  x.font = '650 104px Onest, Geist, sans-serif';
-  x.textAlign = 'center';
-  x.textBaseline = 'middle';
-  const words = text.length > 9 ? [text.slice(0, 7) + '-', text.slice(7)] : [text];   // «Производ- / ство»
-  words.forEach((w, i) => x.fillText(w, 512, 256 + (i - (words.length - 1) / 2) * 104));
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
-}
-
-const tileGeometry = new RoundedBoxGeometry(1.05, 1.05, .32, 4, .12);
-let tileGlass = null;
-
-/** A module tile: a slab of bright frosted glass with the module's name on its face. */
-export function createModuleTile(name, glass) {
-  tileGlass ??= glass;
-  const tile = new THREE.Mesh(tileGeometry, tileGlass);
-  const label = new THREE.Mesh(new THREE.PlaneGeometry(.92, .46), new THREE.MeshBasicMaterial({
-    map: labelTexture(name), transparent: true, depthWrite: false, toneMapped: false,
-  }));
-  label.position.z = .17;
-  tile.add(label);
-  return tile;
-}
+export const tileGeometry = new RoundedBoxGeometry(1.05, 1.05, .32, 4, .12);
 
 // ---------- Live screens: small fragments of the Cloudplus interface set into the cloud ----------
 // Each draws one moment of a business process at time t and returns a key; a new key means
 // the value just changed, and that change sends a ripple of light through the blocks.
-const UI = '500 40px Onest, Geist, sans-serif', BIG = '600 88px Onest, Geist, sans-serif';
-const BLUE = '#3fa9f5', SOFT = 'rgba(214,232,255,.62)';
+const BIG = '600 88px Onest, Geist, sans-serif';
+export const UI = '500 40px Onest, Geist, sans-serif';
+export const BLUE = '#3fa9f5', SOFT = 'rgba(214,232,255,.62)';
 const num = n => Math.round(n).toLocaleString('ru-RU');
 
-function screenBase(x, title) {
+export function screenBase(x, title) {
   x.clearRect(0, 0, 512, 512);
   const g = x.createLinearGradient(0, 0, 0, 512);
   g.addColorStop(0, '#15305a'); g.addColorStop(1, '#0a1730');
@@ -132,7 +104,7 @@ const SCREENS = [
   },
 ];
 
-function createScreen(draw) {
+export function createScreen(draw) {
   const c = document.createElement('canvas');
   c.width = c.height = 512;
   const ctx = c.getContext('2d');
@@ -155,6 +127,27 @@ function createScreen(draw) {
       return changed;
     },
   };
+}
+
+/** The frosted glass of every block; aGlow (per instance, optional) adds brand-blue light. */
+export function makeGlass() {
+  const glass = new THREE.MeshPhysicalMaterial({
+    // Frosted ice: milky, lit from within, with crisp clear-coat highlights on the edges.
+    color: '#eef6ff', roughness: .46, metalness: 0,
+    transmission: .84, thickness: .45, ior: 1.31, dispersion: .35,
+    attenuationColor: '#9fd0ff', attenuationDistance: 1.6,
+    clearcoat: 1, clearcoatRoughness: .1,
+    emissive: '#5aa8ef', emissiveIntensity: .08,
+    specularIntensity: 1, envMapIntensity: 1.5,
+  });
+  // Per-block light: ripples of data pass through the cloud as brand-blue glow.
+  glass.onBeforeCompile = s => {
+    s.vertexShader = 'attribute float aGlow;\nvarying float vGlow;\n' +
+      s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;');
+    s.fragmentShader = 'varying float vGlow;\n' +
+      s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(.25, .62, 1.) * vGlow;');
+  };
+  return glass;
 }
 
 const clamp01 = v => Math.min(1, Math.max(0, v));
@@ -196,22 +189,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
     b.delay = b.out * .9 + b.drift * .35;   // the cloud builds from its glowing core outwards
   }
 
-  const glass = new THREE.MeshPhysicalMaterial({
-    // Frosted ice: milky, lit from within, with crisp clear-coat highlights on the edges.
-    color: '#eef6ff', roughness: .46, metalness: 0,
-    transmission: .84, thickness: .45, ior: 1.31, dispersion: .35,
-    attenuationColor: '#9fd0ff', attenuationDistance: 1.6,
-    clearcoat: 1, clearcoatRoughness: .1,
-    emissive: '#5aa8ef', emissiveIntensity: .08,
-    specularIntensity: 1, envMapIntensity: 1.5,
-  });
-  // Per-block light: ripples of data pass through the cloud as brand-blue glow.
-  glass.onBeforeCompile = s => {
-    s.vertexShader = 'attribute float aGlow;\nvarying float vGlow;\n' +
-      s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlow = aGlow;');
-    s.fragmentShader = 'varying float vGlow;\n' +
-      s.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vec3(.25, .62, 1.) * vGlow;');
-  };
+  const glass = makeGlass();
   const geometry = new RoundedBoxGeometry(1, 1, 1, 3, .14);
   const glow = new THREE.InstancedBufferAttribute(new Float32Array(blocks.length), 1);
   geometry.setAttribute('aGlow', glow);
