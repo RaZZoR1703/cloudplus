@@ -9,7 +9,7 @@ let seed = 7;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
 /** Points on boxes [cx, cy, cz, w, h, d, rotZ?] and z/y-axis cylinders: a third on edges, the rest on faces. */
-function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, groundGroup = 0, extra = [] }) {
+function build(n, { boxes = [], cyls = [], spheres = [], smoke = [], ground = 0, groundGroup = 0, extra = [] }) {
   const out = new Float32Array(n * 4);
   let i = 0;
   const put = (x, y, z, k) => { if (i < n) { out.set([x, y, z, k], i * 4); i++; } };
@@ -20,6 +20,7 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, groundGroup =
   const pieces = [
     ...boxes.map(b => ({ b, a: 2 * (b[3] * b[4] + b[4] * b[5] + b[3] * b[5]) })),
     ...cyls.map(c => ({ c, a: 2 * Math.PI * c[3] * c[4] })),
+    ...spheres.map(o => ({ o, a: 4 * Math.PI * o[3] * o[3] })),
   ];
   const total = pieces.reduce((s, p) => s + p.a, 0);
   for (const p of pieces) {
@@ -42,12 +43,16 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, groundGroup =
         }
         const c = Math.cos(rz), s = Math.sin(rz);
         put(cx + x * c - y * s, cy + x * s + y * c, cz + z, kind + group * 10);
+      } else if (p.o) {
+        const [cx, cy, cz, r, group = 0] = p.o, u = rand() * 2 - 1, a = rand() * Math.PI * 2, q = Math.sqrt(1 - u * u);
+        put(cx + q * Math.cos(a) * r, cy + u * r, cz + q * Math.sin(a) * r, group * 10);
       } else {
         const [cx, cy, cz, r, h, axis = 'y', group = 0] = p.c;
         const a = rand() * Math.PI * 2, t = (rand() - .5) * h, rim = rand() < .2;
         const u = Math.cos(a) * r, v = Math.sin(a) * r, along = rim ? Math.sign(t) * h / 2 : t;
         const kind = (rim ? 1 : 0) + group * 10;
         if (axis === 'y') put(cx + u, cy + along, cz + v, kind);
+        else if (axis === 'x') put(cx + along, cy + u, cz + v, kind);
         else put(cx + u, cy + v, cz + along, kind);
       }
     }
@@ -92,7 +97,13 @@ function text(n, words, width) {
   return out;
 }
 
-const WHEELS = [-4.5, .3, 3.3, 4.5];
+// The truck's points come from the Blender model (blender/truck_points.py); until they load, a box truck stands in.
+const WHEELS = [-4.5, 3.3];
+const PEOPLE = [[1.6, 3.1], [3.2, 3.5], [4.6, 3.0], [6.1, 3.4], [7.5, 3.2]];
+let truck = null;
+const truckLoaded = Promise.all(['truck-points.bin', 'truck-points.json'].map(f => fetch(`../world/${f}`)))
+  .then(async ([bin, json]) => { if (bin.ok && json.ok) truck = { pts: new Int16Array(await bin.arrayBuffer()), ...await json.json() }; })
+  .catch(() => {});
 
 function shapes(n) {
   // Warehouse: a gabled hangar with three roll-up dock doors, a forklift and pallets outside.
@@ -110,16 +121,35 @@ function shapes(n) {
     const x = (rand() - .5) * 10;
     return [x, 4 + rand() * .9 * (1 - Math.abs(x) / 5), j % 2 ? 2.5 : -4.5];
   };
+  const sawtooth = () => {
+    const x0 = -5 + Math.floor(rand() * 4) * 2.5, z = (rand() - .5) * 5, r = rand();
+    if (r < .45) { const t = rand(); return [x0 + 2.5 * t, 3.2 + 1.2 * t, z, 0]; }   // the slope
+    if (r < .75) return [x0 + 2.5, 3.2 + rand() * 1.2, Math.round(z * 2) / 2 + (rand() - .5) * .04, 1];   // glazing bars
+    return [x0 + 2.5 * (r < .87 ? 1 : rand()), r < .87 ? 4.4 : 3.2 + 1.2 * rand(), (rand() - .5) * 5, 1];   // ridges
+  };
+  const windows = () => {   // a band of windows along the hall's front
+    const i = Math.floor(rand() * 7), x = -4.2 + i * 1.4, w = .9, h = .7, e = rand() * 2 * (w + h);
+    const [dx, dy] = e < w ? [e, 0] : e < w + h ? [w, e - w] : e < 2 * w + h ? [e - w - h, h] : [0, e - 2 * w - h];
+    return [x - w / 2 + dx, 1.9 + dy, 2.52, 1];
+  };
   const slats = door => () => [door * 3.3 + (rand() - .5) * 2.3, 1.1 + Math.floor(rand() * 11) * .25, 2.55];   // slats catch the light
   // Shapes are built on first use: the shop's sign and the wordmark need the web font.
   return {
     cloud: () => cloud(n),
     production: () => build(n, {
-      boxes: [[0, 1.6, 0, 10, 3.2, 5], [-6.6, 1.1, .6, 3, 2.2, 3.8],
-        ...[-3.75, -1.25, 1.25, 3.75].map(x => [x, 3.95, 0, 2.7, 1.3, 5, -.45]),
+      boxes: [[0, 1.6, 0, 10, 3.2, 5], [-6.6, 1.1, .6, 3, 2.2, 3.8], [-6.2, .9, 2.52, 1.4, 1.8, .04],   // hall, annex, its gate
         [3.5, .55, 3.4, 8, .12, .9], ...[0, 2.5, 5, 7.5].map(x => [x, .4, 3.4, .1, .8, .1]),   // conveyor belt and legs
         ...[0, 1.75, 3.5, 5.25].map(x => [x, .9, 3.4, .7, .6, .6, 0, 8])],
-      cyls: [[3.4, 4.6, -1.6, .45, 6.6], [4.7, 4.1, -1.6, .35, 5.6], [-3.5, 1.2, 3.5, .9, 2.4], [-1.4, 1.2, 3.5, .9, 2.4]],
+      cyls: [[3.4, 4.6, -1.6, .45, 6.6], [4.7, 4.1, -1.6, .35, 5.6], [-3.5, 1.2, 3.5, .9, 2.4], [-1.4, 1.2, 3.5, .9, 2.4],
+        [-7.4, 2.4, -2.6, .85, 4.8], [-5.5, 2.4, -2.6, .85, 4.8], [-4.4, 4.2, -2.6, .12, 2.2, 'x']],   // silos and the pipe into the hall
+      extra: [
+        { count: Math.floor(n * .1), at: sawtooth },   // north-light roof: slopes and bright glazing
+        { count: Math.floor(n * .05), at: windows },
+        { count: Math.floor(n * .03), at: j => {   // the silos' conical caps
+          const t = rand(), a = rand() * Math.PI * 2, r = .85 * (1 - t);
+          return [(j % 2 ? -7.4 : -5.5) + Math.cos(a) * r, 4.8 + t * .7, -2.6 + Math.sin(a) * r, t < .03 ? 1 : 0];
+        } },
+      ],
       smoke: [[3.4, 7.9, -1.6, .5], [4.7, 6.9, -1.6, .4]],   // crates on the belt (group 8) ride out of the hall
       ground: .06,
     }),
@@ -131,11 +161,17 @@ function shapes(n) {
       ground: .06,
     }),
     // The truck (group 11) idles on a road that runs past (10); its wheels (9) turn, spokes show the spin.
-    distribution: () => build(n, {
+    distribution: () => truck ? build(n, {
+      extra: [{ count: Math.floor(n * .82), at: j => {
+        const i = (j % truck.count) * 4, d = truck.pts, jit = j < truck.count ? 0 : .012;   // repeats are jittered apart
+        return [d[i] / 1000 + (rand() - .5) * jit, d[i + 1] / 1000 + (rand() - .5) * jit, d[i + 2] / 1000 + (rand() - .5) * jit, d[i + 3]];
+      } }, { count: Math.floor(n * .05), kind: 101, at: j => [(rand() - .5) * 26, 0, j % 2 ? 2.3 : -2.3] }],
+      ground: .08, groundGroup: 10,
+    }) : build(n, {
       boxes: [[-4.6, 1.75, 0, 2.2, 2.3, 2.4, 0, 11], [-4.9, 2.4, 0, 1.4, 1, 2.2, .35, 11], [1.2, 2.25, 0, 7.6, 3.3, 2.6, 0, 11], [-1, .55, 0, 11, .35, 1.4, 0, 11]],
       cyls: WHEELS.flatMap(x => [[x, .62, 1.15, .62, .45, 'z', 9], [x, .62, -1.15, .62, .45, 'z', 9]]),
       extra: [{ count: Math.floor(n * .03), kind: 91, at: j => {
-        const x = WHEELS[j % 4], z = j % 8 < 4 ? 1.38 : -1.38, a = (j % 3) * 2.094, r = rand() * .58;
+        const x = WHEELS[j % 2], z = j % 4 < 2 ? 1.38 : -1.38, a = (j % 3) * 2.094, r = rand() * .58;
         return [x + Math.cos(a) * r, .62 + Math.sin(a) * r, z];
       } }, { count: Math.floor(n * .05), kind: 101, at: j => [(rand() - .5) * 26, 0, j % 2 ? 2.2 : -2.2] }],   // lane lines
       ground: .08, groundGroup: 10,
@@ -145,10 +181,20 @@ function shapes(n) {
       const sign = text(Math.floor(n * .06), 'МАГАЗИН', 5.6);
       return build(n, {
         boxes: [[0, 2.1, -.6, 11, 4.2, 4.2], [0, 3.3, 1.9, 11.4, .12, 1.6], [0, 4.9, 1.5, 7, 1, .25],
-          ...[-3.2, 0, 3.2].flatMap(x => [[x, 1.2, -.6, .2, 2.2, 3]]), [3.8, .55, 3.4, 1.2, .8, .8],
-          ...[1.6, 3.2, 4.4, 6.1, 7.5].map(x => [x, .8, 3.1 + (x % 1) * .6, .32, 1.5, .32, 0, 13])],
-        cyls: [[3.4, .15, 3.4, .14, .25, 'z'], [4.2, .15, 3.4, .14, .25, 'z']],
-        extra: [{ count: sign.length / 4, kind: 121, at: j => [sign[j * 4], sign[j * 4 + 1] - 2.6 + 4.9, 1.66] }],
+          [0, 1.3, 1.52, 1.8, 2.6, .05],   // door frame
+          ...[-3.2, 0, 3.2].flatMap(x => [[x, 1.4, -1.4, 2.2, 2.8, .08],   // shelf units with goods on them
+            ...[.5, 1.2, 1.9, 2.6].map(y => [x, y - .3, -1.1, 2.2, .05, .6]),
+            ...[-.8, -.27, .27, .8].flatMap(dx => [.5, 1.2, 1.9].map(y => [x + dx, y - .1, -1.1, .4, .35, .4]))]),
+          [3.8, .7, 3.4, 1.1, .6, .7], [3.3, .95, 3.4, .06, .9, .06]],   // shopping cart and its handle
+        cyls: [[3.4, .15, 3.4, .14, .7, 'z'], [4.2, .15, 3.4, .14, .7, 'z'],
+          // shoppers (group 13): body and two legs; heads are spheres below
+          ...PEOPLE.flatMap(([x, z]) => [[x, 1.1, z, .2, .7, 'y', 13], [x - .09, .38, z, .07, .75, 'y', 13], [x + .09, .38, z, .07, .75, 'y', 13]])],
+        spheres: PEOPLE.map(([x, z]) => [x, 1.62, z, .15, 13]),
+        extra: [{ count: sign.length / 4, kind: 121, at: j => [sign[j * 4], sign[j * 4 + 1] - 2.6 + 4.9, 1.66] },
+          { count: Math.floor(n * .05), at: j => {   // storefront glazing bars and the awning's stripes
+            if (j % 3) { const x = -5.5 + Math.floor(rand() * 11) * 1.1; return [Math.abs(x) < 1 ? x * 1.4 : x, .1 + rand() * 2.9, 1.52]; }
+            return [-5.7 + Math.floor(rand() * 20) * .6, 3.3, 1.1 + rand() * 1.6];
+          } }],
         ground: .06,
       });
     },
@@ -160,7 +206,8 @@ const vertexShader = /* glsl */`
 attribute vec4 aA;
 attribute vec4 aB;
 attribute float aRand;
-uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn;
+uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY;
+uniform vec2 uWheels;
 uniform vec3 uMouse, uView;
 varying float vAlpha, vGlow;
 vec3 flow(vec3 p, float t) {
@@ -187,12 +234,15 @@ void main() {
     // GROUPS 8–13 move on their own: crates on the conveyor, the truck's wheels, road, body, the shop's sign and shoppers.
     if (group < 8.5) { float o = mod(p.x + uTime * .6, 7.); p.x = o; vAlpha *= smoothstep(0., .6, o) * smoothstep(7., 6.4, o); }
     else if (group < 9.5) {
-      float cx = p.x < -2. ? -4.5 : p.x < 1.8 ? .3 : p.x < 3.9 ? 3.3 : 4.5;
-      vec2 d = p.xy - vec2(cx, .62);
+      float cx = abs(p.x - uWheels.x) < abs(p.x - uWheels.y) ? uWheels.x : uWheels.y;   // nearest axle
+      vec2 d = p.xy - vec2(cx, uWheelY);
       float a = uTime * 8.;   // the cab leads towards -x: wheels roll anticlockwise at road speed / radius
-      p.xy = vec2(cx, .62) + mat2(cos(a), sin(a), -sin(a), cos(a)) * d;
+      p.xy = vec2(cx, uWheelY) + mat2(cos(a), sin(a), -sin(a), cos(a)) * d;
     }
-    else if (group < 10.5) { float o = mod(p.x + uTime * 5. + 13., 26.);   // the road runs back past the truck p.x = o - 13.; vAlpha *= smoothstep(0., 3., o) * smoothstep(26., 23., o); }
+    else if (group < 10.5) {   // the road runs back past the truck
+      float o = mod(p.x + uTime * 5. + 13., 26.);
+      p.x = o - 13.; vAlpha *= smoothstep(0., 3., o) * smoothstep(26., 23., o);
+    }
     else if (group < 11.5) p.y += sin(uTime * 13.) * .015 + sin(uTime * 3.1) * .02;
     else if (group < 12.5) vAlpha *= .55 + 1.2 * pow(.5 + .5 * sin(uTime * 1.6), 6.);
     else { float o = mod(p.x - .8 - uTime * .9, 7.5); p.x = .8 + o; vAlpha *= smoothstep(0., .8, o) * smoothstep(7.5, 6.5, o); }
@@ -247,9 +297,11 @@ export function createParticles(n) {
     uniforms: {
       uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 99) }, uMouseOn: { value: 0 }, uView: { value: new THREE.Vector3(0, 0, 1) },
+      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 },
     },
   });
   const points = new THREE.Points(geo, material);
+  truckLoaded.then(() => { if (truck) { material.uniforms.uWheels.value.set(...truck.wheels); material.uniforms.uWheelY.value = truck.wheelY; } });
   let pair = 'cloud>cloud';
   return {
     points,
