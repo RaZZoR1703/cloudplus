@@ -258,11 +258,11 @@ export function createBlockCloud({ animateIn = true } = {}) {
       }
       glow.setX(i, g * (1 - k));
       p.copy(b.base)
-        .addScaledVector(b.dir, (1 - a) * (5 + b.drift * 4) + k * (2.5 + b.drift * 6) + breathe + near * .18);
-      p.y -= k * k * (1 + b.drift * 4);
+        .addScaledVector(b.dir, (1 - a) * (5 + b.drift * 4) + k * (1.2 + b.drift * 2.5) + breathe + near * .18);
+      p.y -= k * k * (.3 + b.drift);   // blocks melt into dust close to the cloud, where its particles appear
       const turn = (1 - a) * 1.6 + k * .6;
       e.set(b.rot.x + b.spin.x * turn, b.rot.y + b.spin.y * turn, b.rot.z + b.spin.z * turn);
-      mesh.setMatrixAt(i, m4.compose(p, q.setFromEuler(e), s.setScalar(b.scale * a * (1 - k * .3))));
+      mesh.setMatrixAt(i, m4.compose(p, q.setFromEuler(e), s.setScalar(b.scale * a * (1 - k) ** 1.5)));
     });
     mesh.instanceMatrix.needsUpdate = true;
     glow.needsUpdate = true;
@@ -275,8 +275,8 @@ export function createBlockCloud({ animateIn = true } = {}) {
       t.position.copy(u.base).addScaledVector(u.dir, k * (2.2 + i * .35) - (1 - easeBack(a)) * .9);
       t.position.y += Math.sin(time * .7 + i) * .03;
       t.rotation.set(u.rot.x + k * (i - 2.5) * .25 + hover.y * .12 * hover.on, u.rot.y + k * (i % 2 ? .6 : -.6) + hover.x * .2 * hover.on, u.rot.z);
-      t.scale.setScalar(Math.max(.001, a));
-      u.screen.mesh.material.opacity = on * (1 - k * .6);
+      t.scale.setScalar(Math.max(.001, a * (1 - k)));
+      u.screen.mesh.material.opacity = on * (1 - k);
     });
     core.intensity = 4 * (1 - explode * .5) * intro((time - .1) / 1.2);
   }

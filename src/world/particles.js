@@ -9,7 +9,7 @@ let seed = 7;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
 
 /** Points on boxes [cx, cy, cz, w, h, d, rotZ?] and z/y-axis cylinders: a third on edges, the rest on faces. */
-function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, extra = [] }) {
+function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, groundGroup = 0, extra = [] }) {
   const out = new Float32Array(n * 4);
   let i = 0;
   const put = (x, y, z, k) => { if (i < n) { out.set([x, y, z, k], i * 4); i++; } };
@@ -57,7 +57,7 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, extra = [] })
     const [cx, cy, cz, r] = smoke[j % smoke.length];
     put(cx + (rand() - .5) * r, cy, cz + (rand() - .5) * r, 2);
   }
-  while (i < n) put((rand() - .5) * 26, -.02, (rand() - .5) * 16, 3);
+  while (i < n) put((rand() - .5) * 26, -.02, (rand() - .5) * 16, 3 + groundGroup * 10);
   return out;
 }
 
@@ -92,6 +92,8 @@ function text(n, words, width) {
   return out;
 }
 
+const WHEELS = [-4.5, .3, 3.3, 4.5];
+
 function shapes(n) {
   // Warehouse: a gabled hangar with three roll-up dock doors, a forklift and pallets outside.
   const pitch = Math.atan2(.9, 5), slope = Math.hypot(.9, 5);   // a low industrial pitch, not a house
@@ -109,33 +111,48 @@ function shapes(n) {
     return [x, 4 + rand() * .9 * (1 - Math.abs(x) / 5), j % 2 ? 2.5 : -4.5];
   };
   const slats = door => () => [door * 3.3 + (rand() - .5) * 2.3, 1.1 + Math.floor(rand() * 11) * .25, 2.55];   // slats catch the light
+  // Shapes are built on first use: the shop's sign and the wordmark need the web font.
   return {
-    cloud: cloud(n),
-    production: build(n, {
+    cloud: () => cloud(n),
+    production: () => build(n, {
       boxes: [[0, 1.6, 0, 10, 3.2, 5], [-6.6, 1.1, .6, 3, 2.2, 3.8],
-        ...[-3.75, -1.25, 1.25, 3.75].map(x => [x, 3.95, 0, 2.7, 1.3, 5, -.45])],
+        ...[-3.75, -1.25, 1.25, 3.75].map(x => [x, 3.95, 0, 2.7, 1.3, 5, -.45]),
+        [3.5, .55, 3.4, 8, .12, .9], ...[0, 2.5, 5, 7.5].map(x => [x, .4, 3.4, .1, .8, .1]),   // conveyor belt and legs
+        ...[0, 1.75, 3.5, 5.25].map(x => [x, .9, 3.4, .7, .6, .6, 0, 8])],
       cyls: [[3.4, 4.6, -1.6, .45, 6.6], [4.7, 4.1, -1.6, .35, 5.6], [-3.5, 1.2, 3.5, .9, 2.4], [-1.4, 1.2, 3.5, .9, 2.4]],
-      smoke: [[3.4, 7.9, -1.6, .5], [4.7, 6.9, -1.6, .4]],
+      smoke: [[3.4, 7.9, -1.6, .5], [4.7, 6.9, -1.6, .4]],   // crates on the belt (group 8) ride out of the hall
       ground: .06,
     }),
-    warehouse: build(n, {
+    warehouse: () => build(n, {
       boxes: hangar,
       cyls: [[-7.6, .32, 4.4, .32, 1.3, 'z', 4], [-6.5, .32, 4.4, .32, 1.3, 'z', 4]],
       extra: [{ count: Math.floor(n * .05), at: gable, kind: 0 }, { count: Math.floor(n * .02), at: slats(-1), kind: 61 },
         { count: Math.floor(n * .04), at: j => slats(j % 2 ? 1 : 0)() }],
       ground: .06,
     }),
-    distribution: build(n, {
-      boxes: [[-4.6, 1.75, 0, 2.2, 2.3, 2.4], [-4.9, 2.4, 0, 1.4, 1, 2.2, .35], [1.2, 2.25, 0, 7.6, 3.3, 2.6], [-1, .55, 0, 11, .35, 1.4]],
-      cyls: [-4.5, .3, 3.3, 4.5].flatMap(x => [[x, .62, 1.15, .62, .45, 'z'], [x, .62, -1.15, .62, .45, 'z']]),
-      ground: .08,
+    // The truck (group 11) idles on a road that runs past (10); its wheels (9) turn, spokes show the spin.
+    distribution: () => build(n, {
+      boxes: [[-4.6, 1.75, 0, 2.2, 2.3, 2.4, 0, 11], [-4.9, 2.4, 0, 1.4, 1, 2.2, .35, 11], [1.2, 2.25, 0, 7.6, 3.3, 2.6, 0, 11], [-1, .55, 0, 11, .35, 1.4, 0, 11]],
+      cyls: WHEELS.flatMap(x => [[x, .62, 1.15, .62, .45, 'z', 9], [x, .62, -1.15, .62, .45, 'z', 9]]),
+      extra: [{ count: Math.floor(n * .03), kind: 91, at: j => {
+        const x = WHEELS[j % 4], z = j % 8 < 4 ? 1.38 : -1.38, a = (j % 3) * 2.094, r = rand() * .58;
+        return [x + Math.cos(a) * r, .62 + Math.sin(a) * r, z];
+      } }, { count: Math.floor(n * .05), kind: 101, at: j => [(rand() - .5) * 26, 0, j % 2 ? 2.2 : -2.2] }],   // lane lines
+      ground: .08, groundGroup: 10,
     }),
-    retail: build(n, {
-      boxes: [[0, 2.1, -.6, 11, 4.2, 4.2], [0, 3.3, 1.9, 11.4, .12, 1.6], [0, 4.9, 1.5, 7, 1, .25],
-        ...[-3.2, 0, 3.2].flatMap(x => [[x, 1.2, -.6, .2, 2.2, 3]]), [3.8, .55, 3.4, 1.2, .8, .8]],
-      cyls: [[3.4, .15, 3.4, .14, .25, 'z'], [4.2, .15, 3.4, .14, .25, 'z']],
-      ground: .06,
-    }),
+    // The shop: its sign lights up (group 12), shoppers (13) walk in at the door.
+    retail: () => {
+      const sign = text(Math.floor(n * .06), 'МАГАЗИН', 5.6);
+      return build(n, {
+        boxes: [[0, 2.1, -.6, 11, 4.2, 4.2], [0, 3.3, 1.9, 11.4, .12, 1.6], [0, 4.9, 1.5, 7, 1, .25],
+          ...[-3.2, 0, 3.2].flatMap(x => [[x, 1.2, -.6, .2, 2.2, 3]]), [3.8, .55, 3.4, 1.2, .8, .8],
+          ...[1.6, 3.2, 4.4, 6.1, 7.5].map(x => [x, .8, 3.1 + (x % 1) * .6, .32, 1.5, .32, 0, 13])],
+        cyls: [[3.4, .15, 3.4, .14, .25, 'z'], [4.2, .15, 3.4, .14, .25, 'z']],
+        extra: [{ count: sign.length / 4, kind: 121, at: j => [sign[j * 4], sign[j * 4 + 1] - 2.6 + 4.9, 1.66] }],
+        ground: .06,
+      });
+    },
+    outro: () => text(n, 'Cloudplus', 21),
   };
 }
 
@@ -166,8 +183,21 @@ void main() {
     p += vec3(h * h * 2.5, h * 4.2, 0.) + flow(p, uTime) * h * .5;
     vAlpha = (1. - h) * .7;
   }
-  if (group > 3.5) {
-    // GROUPS: a seven-second cycle at the warehouse. 4 forklift, 7 its forks, 5 the pallet, 6 the left door.
+  if (group > 7.5) {
+    // GROUPS 8–13 move on their own: crates on the conveyor, the truck's wheels, road, body, the shop's sign and shoppers.
+    if (group < 8.5) { float o = mod(p.x + uTime * .6, 7.); p.x = o; vAlpha *= smoothstep(0., .6, o) * smoothstep(7., 6.4, o); }
+    else if (group < 9.5) {
+      float cx = p.x < -2. ? -4.5 : p.x < 1.8 ? .3 : p.x < 3.9 ? 3.3 : 4.5;
+      vec2 d = p.xy - vec2(cx, .62);
+      float a = -uTime * 5.;
+      p.xy = vec2(cx, .62) + mat2(cos(a), sin(a), -sin(a), cos(a)) * d;
+    }
+    else if (group < 10.5) { float o = mod(p.x - uTime * 5. + 13., 26.); p.x = o - 13.; vAlpha *= smoothstep(0., 3., o) * smoothstep(26., 23., o); }
+    else if (group < 11.5) p.y += sin(uTime * 13.) * .015 + sin(uTime * 3.1) * .02;
+    else if (group < 12.5) vAlpha *= .55 + 1.2 * pow(.5 + .5 * sin(uTime * 1.6), 6.);
+    else { float o = mod(p.x - .8 - uTime * .9, 7.5); p.x = .8 + o; vAlpha *= smoothstep(0., .8, o) * smoothstep(7.5, 6.5, o); }
+  } else if (group > 3.5) {
+    // GROUPS 4–7: a seven-second cycle at the warehouse. 4 forklift, 7 its forks, 5 the pallet, 6 the left door.
     float c = fract(uTime / 7.);
     float go = smoothstep(0., .35, c) * (1. - smoothstep(.6, .95, c));
     float lift = smoothstep(.22, .4, c) * (1. - smoothstep(.62, .85, c));
@@ -184,7 +214,7 @@ void main() {
   p += normalize(d + 1e-4) * m * 1.4 + cross(uView, d) * m * .6;
   vec4 mv = modelViewMatrix * vec4(p, 1.);
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);   // depth of field: out of focus = bigger, fainter
-  float edge = step(.5, kind) * step(kind, 1.5);
+  float edge = step(.5, kind) * step(kind, 1.5) + step(11.5, group) * step(group, 12.5);
   gl_PointSize = uSize * (1. + blur * 2.2) * (1. + edge * .35) / -mv.z;
   vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.);
   vGlow = max(edge, aRand * aRand);
@@ -202,9 +232,10 @@ void main() {
 
 /** The particle river. show(from, to, mix) picks the two shapes it is between; names as in shapes(). */
 export function createParticles(n) {
-  const all = shapes(n);
+  const make = shapes(n), all = {};
+  const get = name => (all[name] ??= make[name]());
   const geo = new THREE.BufferGeometry();
-  const a = new THREE.BufferAttribute(all.cloud.slice(), 4), b = new THREE.BufferAttribute(all.cloud.slice(), 4);
+  const a = new THREE.BufferAttribute(get('cloud').slice(), 4), b = new THREE.BufferAttribute(get('cloud').slice(), 4);
   const r = new Float32Array(n).map(() => rand());
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
   geo.setAttribute('aA', a);
@@ -226,9 +257,7 @@ export function createParticles(n) {
     show(from, to, mix) {
       if (`${from}>${to}` !== pair) {
         pair = `${from}>${to}`;
-        // The wordmark waits for the web font, so it is drawn on first use.
-        all.outro ??= text(n, 'Cloudplus', 21);
-        a.array.set(all[from]); b.array.set(all[to]);
+        a.array.set(get(from)); b.array.set(get(to));
         a.needsUpdate = b.needsUpdate = true;
       }
       material.uniforms.uMix.value = mix;

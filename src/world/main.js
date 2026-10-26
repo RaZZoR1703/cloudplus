@@ -133,26 +133,48 @@ const panels = Object.fromEntries([...document.querySelectorAll('.panel')].map(e
   el, anchor: new THREE.Vector3(...el.dataset.anchor.split(',').map(Number)),
   count: el.querySelector('[data-count]'), bar: el.querySelector('[data-bar]'), row: el.querySelector('[data-row]'), status: el.querySelector('[data-status]'),
 }]));
+// What each panel says at time t; it follows the same cycles as the moving parts in the shader.
+const PANELS = {
+  production(t) {   // a crate leaves the hall every 1.75 / .6 s, each worth 20 units
+    const n = Math.floor(t * .6 / 1.75) % 28, made = 640 + n * 20;
+    return { count: `${num(made)} из 1 200`, bar: made / 1200, row: `Ящик ${33 + n} · линия 2`, status: 'на ленте', ok: false };
+  },
+  warehouse(t) {   // the forklift brings a pallet every seven seconds
+    const c = (t / 7) % 1, n = Math.floor(t / 7) % 7, done = 17 + n + (c > .6 ? 1 : 0);
+    return { count: `${done} из 24`, bar: done / 24, row: `Паллета ${18 + n} · ячейка B-${14 + n}`,
+      status: c < .45 ? 'везут' : c < .6 ? 'сканирование…' : 'принята ✓', ok: c >= .6 };
+  },
+  distribution(t) {   // a drop every six seconds
+    const c = (t / 6) % 1, n = Math.floor(t / 6) % 5, done = 7 + n + (c > .8 ? 1 : 0);
+    return { count: `${done} из 12`, bar: done / 12, row: `Точка ${8 + n} · прибытие 14:${20 + n * 12}`,
+      status: c > .8 ? 'доставлено ✓' : 'едет', ok: c > .8 };
+  },
+  retail(t) {   // a shopper reaches the till every 7.5 / .9 s; stock below 40 triggers a reorder
+    const n = Math.floor(t * .9 / 1.5) % 8, left = 44 - n;
+    return { count: num(312 + n), bar: left / 60, row: `Кофе 250 г · ${left} шт`,
+      status: left < 40 ? 'автозаказ ✓' : 'в наличии', ok: left < 40 };
+  },
+};
+const num = n => n.toLocaleString('ru-RU');
 let panelState = '';
 function updatePanel(key, amount, t) {
   const panel = panels[key];
   thread.style.opacity = panel ? amount : 0;
   if (!panel || amount < .01) return;
-  // The warehouse panel counts the pallets the forklift brings in (the same seven-second cycle as the shader).
-  const c = (t / 7) % 1, n = Math.floor(t / 7) % 7, done = 17 + n + (c > .6 ? 1 : 0);
-  const state = `${done}|${c < .45 ? 0 : c < .6 ? 1 : 2}`;
+  const v = PANELS[key](t), state = key + JSON.stringify(v);
   if (state !== panelState) {
     panelState = state;
-    panel.count.textContent = `${done} из 24`;
-    panel.bar.style.width = `${done / 24 * 100}%`;
-    panel.row.textContent = `Паллета ${18 + n} · ячейка B-${14 + n}`;
-    panel.status.textContent = c < .45 ? 'везут' : c < .6 ? 'сканирование…' : 'принята ✓';
-    panel.status.className = c >= .6 ? 'chip ok' : 'chip';
+    panel.count.textContent = v.count;
+    panel.bar.style.width = `${Math.min(1, v.bar) * 100}%`;
+    panel.row.textContent = v.row;
+    panel.status.textContent = v.status;
+    panel.status.className = v.ok ? 'chip ok' : 'chip';
   }
   const a = panel.anchor.clone().project(camera), r = panel.el.getBoundingClientRect();
   const ax = (a.x + 1) / 2 * innerWidth, ay = (1 - a.y) / 2 * innerHeight;
-  const px = small ? r.left + r.width / 2 : r.left, py = small ? r.bottom : r.top + r.height / 2;
-  threadPath.setAttribute('d', small ? `M${ax},${ay} C${ax},${ay - 60} ${px},${py + 60} ${px},${py}` : `M${ax},${ay} C${ax},${ay - 90} ${px - 90},${py} ${px},${py}`);
+  // The panel sits under the scene on wide screens and above it on phones; the thread meets its nearest edge.
+  const px = r.left + r.width / 2, py = small ? r.bottom : r.top, bend = small ? -60 : 90;
+  threadPath.setAttribute('d', `M${ax},${ay} C${ax},${ay + bend} ${px},${py - bend} ${px},${py}`);
   threadDot.setAttribute('cx', ax); threadDot.setAttribute('cy', ay);
 }
 
@@ -188,7 +210,7 @@ gsap.ticker.add(time => {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
     heroCopy.style.opacity = 1 - smooth(.3, .5, w.p);
     // The glass shatters into dust: particles take over the cloud's shape as the blocks fly apart.
-    reveal = smooth(.25, .75, explode);
+    reveal = smooth(.1, .7, explode);
     river.show('cloud', 'cloud', 1);
   } else if (w.phase === 'descend') {
     const h = heroPose(1, t), o = orbitPose(0, turns[0]), k = smooth(0, 1, w.p);
@@ -221,7 +243,7 @@ gsap.ticker.add(time => {
   camera.filmOffset += (offset - camera.filmOffset) * (still ? 1 : .08);
   camera.updateProjectionMatrix();
 
-  cloud.group.visible = w.phase === 'hero' || w.phase === 'descend';
+  cloud.group.visible = w.phase === 'hero' && explode < .999;   // by then every block has shrunk to nothing
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
   cloud.update(explode, t, still ? undefined : lean);
   const u = river.uniforms;
