@@ -127,6 +127,35 @@ function heroPose(p, t) {
   };
 }
 
+// ---------- Live panels: a thread of light runs from the scene to the panel ----------
+const thread = document.querySelector('.thread'), threadPath = thread.querySelector('path'), threadDot = thread.querySelector('circle');
+const panels = Object.fromEntries([...document.querySelectorAll('.panel')].map(el => [el.dataset.overlay, {
+  el, anchor: new THREE.Vector3(...el.dataset.anchor.split(',').map(Number)),
+  count: el.querySelector('[data-count]'), bar: el.querySelector('[data-bar]'), row: el.querySelector('[data-row]'), status: el.querySelector('[data-status]'),
+}]));
+let panelState = '';
+function updatePanel(key, amount, t) {
+  const panel = panels[key];
+  thread.style.opacity = panel ? amount : 0;
+  if (!panel || amount < .01) return;
+  // The warehouse panel counts the pallets the forklift brings in (the same seven-second cycle as the shader).
+  const c = (t / 7) % 1, n = Math.floor(t / 7) % 7, done = 17 + n + (c > .6 ? 1 : 0);
+  const state = `${done}|${c < .45 ? 0 : c < .6 ? 1 : 2}`;
+  if (state !== panelState) {
+    panelState = state;
+    panel.count.textContent = `${done} из 24`;
+    panel.bar.style.width = `${done / 24 * 100}%`;
+    panel.row.textContent = `Паллета ${18 + n} · ячейка B-${14 + n}`;
+    panel.status.textContent = c < .45 ? 'везут' : c < .6 ? 'сканирование…' : 'принята ✓';
+    panel.status.className = c >= .6 ? 'chip ok' : 'chip';
+  }
+  const a = panel.anchor.clone().project(camera), r = panel.el.getBoundingClientRect();
+  const ax = (a.x + 1) / 2 * innerWidth, ay = (1 - a.y) / 2 * innerHeight;
+  const px = small ? r.left + r.width / 2 : r.left, py = small ? r.bottom : r.top + r.height / 2;
+  threadPath.setAttribute('d', small ? `M${ax},${ay} C${ax},${ay - 60} ${px},${py + 60} ${px},${py}` : `M${ax},${ay} C${ax},${ay - 90} ${px - 90},${py} ${px},${py}`);
+  threadDot.setAttribute('cx', ax); threadDot.setAttribute('cy', ay);
+}
+
 // ---------- Chapter overlays ----------
 const overlays = [...document.querySelectorAll('[data-overlay]')];
 function showOverlay(key, amount) {
@@ -215,6 +244,7 @@ gsap.ticker.add(time => {
   sea.update(t, 1 - explode * .7);
   motes.update(t, renderer.getPixelRatio());
   showOverlay(overlayKey, overlayAmt);
+  updatePanel(overlayKey, overlayAmt, t);
   grade.uniforms.uTime.value = t % 10;
   composer.render();
 });

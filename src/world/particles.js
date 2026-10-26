@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { solid } from './blockCloud.js';
 
 // A river of light: one set of particles that flows from shape to shape. Each shape is a list of
-// points (x, y, z, kind); kind 0 = surface, 1 = edge (brighter), 2 = smoke (rises), 3 = ground.
+// points (x, y, z, kind); kind 0 = surface, 1 = edge (brighter), 2 = smoke (rises), 3 = ground,
+// plus 10 × a group for parts that move on their own (see GROUPS in the shader).
 
 let seed = 7;
 const rand = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -25,7 +26,7 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, extra = [] })
     const count = Math.round(nBody * p.a / total);
     for (let j = 0; j < count; j++) {
       if (p.b) {
-        const [cx, cy, cz, w, h, d, rz = 0] = p.b;
+        const [cx, cy, cz, w, h, d, rz = 0, group = 0] = p.b;
         let x = (rand() - .5) * w, y = (rand() - .5) * h, z = (rand() - .5) * d, kind = 0;
         if (rand() < .35) {   // edge: two coordinates pinned to the box's corners
           const axis = Math.floor(rand() * 3);
@@ -40,13 +41,14 @@ function build(n, { boxes = [], cyls = [], smoke = [], ground = 0, extra = [] })
           else y = Math.sign(rand() - .5) * h / 2;
         }
         const c = Math.cos(rz), s = Math.sin(rz);
-        put(cx + x * c - y * s, cy + x * s + y * c, cz + z, kind);
+        put(cx + x * c - y * s, cy + x * s + y * c, cz + z, kind + group * 10);
       } else {
-        const [cx, cy, cz, r, h, axis = 'y'] = p.c;
+        const [cx, cy, cz, r, h, axis = 'y', group = 0] = p.c;
         const a = rand() * Math.PI * 2, t = (rand() - .5) * h, rim = rand() < .2;
         const u = Math.cos(a) * r, v = Math.sin(a) * r, along = rim ? Math.sign(t) * h / 2 : t;
-        if (axis === 'y') put(cx + u, cy + along, cz + v, rim ? 1 : 0);
-        else put(cx + u, cy + v, cz + along, rim ? 1 : 0);
+        const kind = (rim ? 1 : 0) + group * 10;
+        if (axis === 'y') put(cx + u, cy + along, cz + v, kind);
+        else put(cx + u, cy + v, cz + along, kind);
       }
     }
   }
@@ -96,19 +98,17 @@ function shapes(n) {
   const hangar = [[0, 2, -1, 10, 4, 7], [-2.5, 4.45, -1, slope, .1, 7.2, pitch], [2.5, 4.45, -1, slope, .1, 7.2, -pitch],
     [0, .5, 3.2, 10.4, 1, 1.4],   // loading dock
     ...[-3.3, 0, 3.3].map(x => [x, 2.45, 2.52, 2.4, 2.9, .04]),   // door frames
-    [-7, .8, 4.4, 1.6, .9, 1.2], [-7.4, 2.15, 4.4, .9, .08, 1.1], [-7.8, 1.5, 3.9, .07, 1.4, .07], [-7.8, 1.5, 4.9, .07, 1.4, .07],   // forklift body, roof guard, posts
-    [-6.1, 1.5, 4.4, .15, 2.6, 1], [-5.5, .12, 4.1, 1.1, .07, .12], [-5.5, .12, 4.7, 1.1, .07, .12],   // mast and forks
-    [-5.5, .25, 4.4, 1.2, .14, 1.1], [-5.5, .75, 4.4, 1.1, .85, 1],   // pallet with a load on the forks
+    // Forklift (group 4), its forks (7) and the pallet it carries (5): they shuttle pallets into the left door.
+    [-7, .8, 4.4, 1.6, .9, 1.2, 0, 4], [-7.4, 2.15, 4.4, .9, .08, 1.1, 0, 4], [-7.8, 1.5, 3.9, .07, 1.4, .07, 0, 4], [-7.8, 1.5, 4.9, .07, 1.4, .07, 0, 4],
+    [-6.1, 1.5, 4.4, .15, 2.6, 1, 0, 4], [-5.5, .12, 4.1, 1.1, .07, .12, 0, 7], [-5.5, .12, 4.7, 1.1, .07, .12, 0, 7],
+    [-5.5, .25, 4.4, 1.2, .14, 1.1, 0, 5], [-5.5, .75, 4.4, 1.1, .85, 1, 0, 5],
     ...[[5.6, 4.6], [6.9, 4.6], [5.6, 5.9]].flatMap(([x, z]) => [[x, .1, z, 1.2, .14, 1.1], [x, .62, z, 1.1, .9, 1]]),
     [6.25, 1.55, 4.6, 1.1, .9, 1]];
   const gable = j => {   // the triangle over each end wall
     const x = (rand() - .5) * 10;
     return [x, 4 + rand() * .9 * (1 - Math.abs(x) / 5), j % 2 ? 2.5 : -4.5];
   };
-  const slats = j => {   // the doors' horizontal slats catch the light
-    const d = j % 3, row = Math.floor(rand() * 11);
-    return [(d - 1) * 3.3 + (rand() - .5) * 2.3, 1.1 + row * .25, 2.55];
-  };
+  const slats = door => () => [door * 3.3 + (rand() - .5) * 2.3, 1.1 + Math.floor(rand() * 11) * .25, 2.55];   // slats catch the light
   return {
     cloud: cloud(n),
     production: build(n, {
@@ -120,8 +120,9 @@ function shapes(n) {
     }),
     warehouse: build(n, {
       boxes: hangar,
-      cyls: [[-7.6, .32, 4.4, .32, 1.3, 'z'], [-6.5, .32, 4.4, .32, 1.3, 'z']],
-      extra: [{ count: Math.floor(n * .05), at: gable, kind: 0 }, { count: Math.floor(n * .06), at: slats }],
+      cyls: [[-7.6, .32, 4.4, .32, 1.3, 'z', 4], [-6.5, .32, 4.4, .32, 1.3, 'z', 4]],
+      extra: [{ count: Math.floor(n * .05), at: gable, kind: 0 }, { count: Math.floor(n * .02), at: slats(-1), kind: 61 },
+        { count: Math.floor(n * .04), at: j => slats(j % 2 ? 1 : 0)() }],
       ground: .06,
     }),
     distribution: build(n, {
@@ -155,6 +156,8 @@ void main() {
   float k = smoothstep(0., 1., clamp(uMix * 1.7 - aRand * .7, 0., 1.));
   vec3 p = mix(aA.xyz, aB.xyz, k);
   float kind = k < .5 ? aA.w : aB.w;
+  float group = floor(kind / 10.);
+  kind -= group * 10.;
   float swirl = sin(3.14159 * k);
   p += flow(p * .5 + aRand * 6., uTime) * (swirl * 2.6 + .035);
   vAlpha = 1.;
@@ -162,6 +165,18 @@ void main() {
     float h = fract(uTime * .07 + aRand * 5.);
     p += vec3(h * h * 2.5, h * 4.2, 0.) + flow(p, uTime) * h * .5;
     vAlpha = (1. - h) * .7;
+  }
+  if (group > 3.5) {
+    // GROUPS: a seven-second cycle at the warehouse. 4 forklift, 7 its forks, 5 the pallet, 6 the left door.
+    float c = fract(uTime / 7.);
+    float go = smoothstep(0., .35, c) * (1. - smoothstep(.6, .95, c));
+    float lift = smoothstep(.22, .4, c) * (1. - smoothstep(.62, .85, c));
+    if (group < 4.5) p.x += go * 2.2;
+    else if (group > 6.5) p += vec3(go * 2.2, lift * .9, 0.);
+    else if (group < 5.5) {   // the pallet rides in, is pushed through the open door and a fresh one appears
+      p += vec3(2.2 * (c < .6 ? go : 1.), .9 * smoothstep(.22, .4, c), -2.6 * smoothstep(.42, .6, c));
+      vAlpha *= max(1. - smoothstep(.5, .6, c), smoothstep(.93, 1., c));
+    } else p.y += (3.85 - p.y) * .92 * smoothstep(.36, .48, c) * (1. - smoothstep(.72, .88, c));   // the door rolls up
   }
   // The pointer parts the particles and stirs them round it.
   vec3 d = p - uMouse;
