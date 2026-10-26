@@ -202,7 +202,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
     transmission: .84, thickness: .45, ior: 1.31, dispersion: .35,
     attenuationColor: '#9fd0ff', attenuationDistance: 1.6,
     clearcoat: 1, clearcoatRoughness: .1,
-    emissive: '#5aa8ef', emissiveIntensity: .12,
+    emissive: '#5aa8ef', emissiveIntensity: .08,
     specularIntensity: 1, envMapIntensity: 1.5,
   });
   // Per-block light: ripples of data pass through the cloud as brand-blue glow.
@@ -244,9 +244,9 @@ export function createBlockCloud({ animateIn = true } = {}) {
   });
 
   // The light inside: a soft core and a brand-blue halo; bloom turns them into a glow.
-  const core = new THREE.PointLight('#e6f3ff', 16, 6.5, 1.5);
+  const core = new THREE.PointLight('#cfe6ff', 4, 6.5, 1.5);
   core.position.set(-.1, .25, .1);
-  const halo = new THREE.PointLight('#3fa9f5', 26, 8, 1.6);
+  const halo = new THREE.PointLight('#3fa9f5', 14, 8, 1.6);
   halo.position.set(1.3, .05, -.3);
   group.add(core, halo);
 
@@ -300,7 +300,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
       t.scale.setScalar(Math.max(.001, a));
       u.screen.mesh.material.opacity = on * (1 - k * .6);
     });
-    core.intensity = 16 * (1 - explode * .5) * intro((time - .1) / 1.2);
+    core.intensity = 4 * (1 - explode * .5) * intro((time - .1) / 1.2);
   }
 
   update(0, 0);

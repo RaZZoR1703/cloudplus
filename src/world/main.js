@@ -251,8 +251,8 @@ gsap.ticker.add(time => {
   renderer.toneMappingExposure = lerp(.95, 1, day);
   gtao.enabled = day > .5;
   // By day bright walls would all bloom into a milky haze; keep bloom for the glowing cloud at night.
-  bloom.strength = lerp(.5, .06, day);
-  bloom.threshold = lerp(.8, 1.6, day);
+  bloom.strength = lerp(.3, .06, day);
+  bloom.threshold = lerp(1.0, 1.6, day);
   // The cloud, its sea and the dust belong above the clouds; below they only add haze.
   cloud.group.visible = sea.mesh.visible = motes.mesh.visible = day < .99;
   // The veil peaks as the camera passes through the cloud layer.
