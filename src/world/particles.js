@@ -189,10 +189,10 @@ void main() {
     else if (group < 9.5) {
       float cx = p.x < -2. ? -4.5 : p.x < 1.8 ? .3 : p.x < 3.9 ? 3.3 : 4.5;
       vec2 d = p.xy - vec2(cx, .62);
-      float a = -uTime * 5.;
+      float a = uTime * 8.;   // the cab leads towards -x: wheels roll anticlockwise at road speed / radius
       p.xy = vec2(cx, .62) + mat2(cos(a), sin(a), -sin(a), cos(a)) * d;
     }
-    else if (group < 10.5) { float o = mod(p.x - uTime * 5. + 13., 26.); p.x = o - 13.; vAlpha *= smoothstep(0., 3., o) * smoothstep(26., 23., o); }
+    else if (group < 10.5) { float o = mod(p.x + uTime * 5. + 13., 26.);   // the road runs back past the truck p.x = o - 13.; vAlpha *= smoothstep(0., 3., o) * smoothstep(26., 23., o); }
     else if (group < 11.5) p.y += sin(uTime * 13.) * .015 + sin(uTime * 3.1) * .02;
     else if (group < 12.5) vAlpha *= .55 + 1.2 * pow(.5 + .5 * sin(uTime * 1.6), 6.);
     else { float o = mod(p.x - .8 - uTime * .9, 7.5); p.x = .8 + o; vAlpha *= smoothstep(0., .8, o) * smoothstep(7.5, 6.5, o); }
