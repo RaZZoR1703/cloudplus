@@ -11,6 +11,7 @@ import Lenis from 'lenis';
 import { createBlockCloud } from './blockCloud.js';
 import { createSky, createCloudSea, createMotes, PALETTE } from './atmosphere.js';
 import { createParticles, createAmbience } from './particles.js';
+import { createParcel } from './parcel.js';
 
 gsap.registerPlugin(ScrollTrigger);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -49,6 +50,15 @@ scene.add(river.points);
 const ambience = createAmbience(small ? 12000 : 30000);
 scene.add(ambience.points);
 const SHAPES = ['production', 'warehouse', 'distribution', 'retail'];
+
+// One order through the whole site: between chapters a parcel flies from where the last business
+// hands it on (the conveyor's end, the right dock door, the truck's back) to where the next takes it in.
+const parcel = createParcel();
+scene.add(parcel.group);
+const v = (x, y, z) => new THREE.Vector3(x, y, z);
+const ENTRY = { production: v(0, 1.6, 2.6), warehouse: v(-3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6) };
+const EXIT = { production: v(7, .9, 3.4), warehouse: v(3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6) };
+const CLOUD = v(0, .6, 0), CORE = v(0, 1.6, 0);
 
 // ---------- Post ----------
 const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
@@ -270,7 +280,7 @@ gsap.ticker.add(time => {
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
-  let flash = 0, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  let flash = 0, flight = null, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
@@ -283,16 +293,19 @@ gsap.ticker.add(time => {
     target = { pos: h.pos.lerp(o.pos, k), look: h.look.lerp(o.look, k) };
     offset *= k;
     river.show('cloud', 'production', smooth(.1, .95, w.p));
+    flight = [CLOUD, ENTRY.production, smooth(.15, .95, w.p)];   // the order leaves the program for the factory
   } else if (w.phase === 'chapter') {
     const idx = SHAPES.indexOf(w.key);
     target = orbitPose(w.p, turns[idx]);
     river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .5, w.p) : 1);
+    if (idx) flight = [EXIT[SHAPES[idx - 1]], ENTRY[w.key], smooth(0, .5, w.p)];
     overlayKey = w.key;
     overlayAmt = smooth(.4, .52, w.p) * (1 - smooth(.9, .98, w.p));
   } else if (w.phase === 'configure') {
     // The visitor's company in miniature: the shop's particles regroup into a ring of businesses round a core.
     target = companyPose(w.p);
     river.show('retail', 'company', smooth(0, .35, w.p));
+    flight = [EXIT.retail, CORE, smooth(0, .35, w.p)];   // the sale goes back to the program
     overlayKey = 'configure';
     overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.92, .99, w.p));
   } else {
@@ -324,6 +337,7 @@ gsap.ticker.add(time => {
   for (let i = 0; i < 6; i++) picked[i] += ((chosen.has(i) ? 1 : 0) - picked[i]) * (still ? 1 : .08);
   cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
   river.uniforms.uFlash.value = flash;
+  parcel.update(...(flight ?? [CLOUD, CLOUD, 0]), t);
   const u = river.uniforms;
   u.uTime.value = t;
   u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
