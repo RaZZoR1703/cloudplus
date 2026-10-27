@@ -335,16 +335,20 @@ void main() {
   // Each particle leaves (or lands) at its own moment, so the shape unravels instead of shrinking.
   p += second ? uOffB : uOffA;
   vec3 toCube = p - uCube;
+  // How far a particle is from the cube (0 inside it): those inside fade and shrink, the glowing cube
+  // stands for them; piled up at one spot near the lens they would be blended thousands of times.
+  float spread;
   if (second) {
     float b = smoothstep(0., 1., clamp((uPhase - .65) / .35 * 1.5 - aRand * .5, 0., 1.));
     float burst = sin(3.14159 * b);
     p = uCube + toCube * b + normalize(toCube + 1e-4) * burst * 1.8 + flow(p * .4 + aRand * 5., uTime) * burst;
-    vAlpha *= .2 + .8 * b;
+    spread = b;
   } else {
-    float a = smoothstep(0., 1., clamp(uPhase / .35 * 1.5 - aRand * .5, 0., 1.));
+    float a = smoothstep(0., 1., clamp(uPhase / .28 * 1.5 - aRand * .5, 0., 1.));
     p = uCube + toCube * (1. - a) * (1. - a) + flow(p * .4 + aRand * 5., uTime) * sin(3.14159 * a) * 1.4;
-    vAlpha *= 1. - a * .8;
+    spread = 1. - a;
   }
+  vAlpha *= spread;
   // The pointer parts the particles and stirs them round it.
   vec3 d = p - uMouse;
   float m = exp(-dot(d, d) / 5.) * uMouseOn;
@@ -357,11 +361,13 @@ void main() {
   // The part the live panel talks about lights up while either is pointed at; the rest steps back.
   float hot = uHotAmt * (abs(group - uHot) < .5 ? 1. : -.45);
   vAlpha *= 1. + hot * .85;
-  gl_PointSize = min(gl_PointSize * (1. + max(hot, 0.) * .35), uSize * .4);   // a speck by the lens would fill half the screen, near invisible
+  gl_PointSize = min(gl_PointSize * (1. + max(hot, 0.) * .35) * (.3 + .7 * spread), uSize * .4);   // a speck by the lens would fill half the screen, near invisible
   vGlow = max(max(edge, aRand * aRand), hot);
-  if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
-  if (vAlpha < .004) gl_PointSize = 0.;   // unseen (an unpicked module waits in the core): don't blend it thousands of times
   gl_Position = projectionMatrix * mv;
+  // Weaker devices draw a share of the particles (a little brighter); unseen ones (an unpicked module, dust
+  // inside the cube) are skipped. Moved past the far plane, not just shrunk: Apple's tiled GPUs still bin a
+  // zero-size point, and 140k of them on the cube's one tile cost a frame.
+  if (aRand > uDensity || vAlpha < .004) gl_Position = vec4(0., 0., 2., 1.);
 }`;
 const fragmentShader = /* glsl */`
 varying float vAlpha, vGlow;
@@ -439,8 +445,7 @@ void main() {
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);
   gl_PointSize = min(uSize * (1. + blur * 2.2) / -mv.z, uSize * .4);
   vAlpha *= uReveal / (1. + blur * 3.);
-  if (aSeed.w > uDensity) gl_PointSize = 0.;
-  gl_Position = projectionMatrix * mv;
+  gl_Position = aSeed.w > uDensity ? vec4(0., 0., 2., 1.) : projectionMatrix * mv;   // skipped: past the far plane, as in the river
 }`;
 
 /** Life around the shapes: flowing streams of light and drifting dust, so no frame is ever empty. */

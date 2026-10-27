@@ -74,16 +74,17 @@ function handover(from, to, q, t) {
   const A = EXIT[from].clone().add(PLACE[from]), B = ENTRY[to].clone().add(PLACE[to]);
   handing = true;
   // arc() eases once over a wide window: easing twice made the cube dart through the middle.
-  arc(A, B, Math.min(1, Math.max(0, (q - .26) / .48)), cube);
+  arc(A, B, Math.min(1, Math.max(0, (q - .2) / .48)), cube);
   river.show(from, to, q, PLACE[from], PLACE[to], cube);
-  carry = smooth(.14, .3, q) * (1 - smooth(.7, .86, q));
+  carry = smooth(.08, .22, q) * (1 - smooth(.7, .86, q));
   parcel.update(cube, carry, t);
   // Played forward past the burst (the finale's flash comes at .5): a chime, or the closing swell.
   const pair = from + to, at = to === 'outro' ? .5 : .72;
   if (pair === lastHand.pair && lastHand.q < at && q >= at) to === 'outro' ? sound.swell() : sound.chime(Object.keys(PLACE).indexOf(to));
   lastHand = { pair, q };
-  return smooth(.2, .8, q);
+  return smooth(.15, .8, q);
 }
+const HAND = .36;   // share of a chapter the hand-over into it takes
 const mixPose = (a, b, k) => ({ pos: a.pos.lerp(b.pos, k), look: a.look.lerp(b.look, k) });
 
 // ---------- Post ----------
@@ -340,7 +341,7 @@ gsap.ticker.add(time => {
   const w = where();
   handing = false;
   carry = 0;
-  let flash = 0, thin = 1, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  let flash = 0, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
@@ -356,29 +357,27 @@ gsap.ticker.add(time => {
   } else if (w.phase === 'chapter') {
     // The first half of a chapter is the hand-over from the previous business; then the camera circles this one.
     const idx = SHAPES.indexOf(w.key), place = PLACE[w.key];
-    if (idx && w.p < .5) {
+    if (idx && w.p < HAND) {
       const prev = SHAPES[idx - 1];
-      target = mixPose(orbitPose(1, turns[idx - 1], PLACE[prev]), orbitPose(0, turns[idx], place), handover(prev, w.key, w.p / .5, t));
+      target = mixPose(orbitPose(1, turns[idx - 1], PLACE[prev]), orbitPose(0, turns[idx], place), handover(prev, w.key, w.p / HAND, t));
     } else {
       settle(w.key);
-      target = orbitPose(idx ? (w.p - .5) / .5 : w.p, turns[idx], place);
+      target = orbitPose(idx ? (w.p - HAND) / (1 - HAND) : w.p, turns[idx], place);
     }
     overlayKey = w.key;
-    overlayAmt = (idx ? w.p > .42 : w.p > .06) && w.p < .94 ? 1 : 0;   // on as the cube bursts, off as the next hand-over starts
+    overlayAmt = (idx ? w.p > HAND * .85 : w.p > .06) && w.p < .95 ? 1 : 0;   // on as the cube bursts, off as the next hand-over starts
   } else if (w.phase === 'configure') {
     // The sale goes back to the program: the shop hands the cube to the core of the visitor's company.
-    if (w.p < .4) target = mixPose(orbitPose(1, turns[3], PLACE.retail), companyPose(0), handover('retail', 'company', w.p / .4, t));
-    else { settle('company'); target = companyPose((w.p - .4) / .6); }
+    if (w.p < .3) target = mixPose(orbitPose(1, turns[3], PLACE.retail), companyPose(0), handover('retail', 'company', w.p / .3, t));
+    else { settle('company'); target = companyPose((w.p - .3) / .7); }
     overlayKey = 'configure';
-    overlayAmt = w.p > .36 && w.p < .96 ? 1 : 0;
+    overlayAmt = w.p > .26 && w.p < .96 ? 1 : 0;
   } else {
     // Finale: the company is drawn into the cube at its core, which flares and opens into the Cloudplus mark.
     const q = smooth(0, .7, w.p), c = PLACE.outro;
     target = mixPose(companyPose(1), { pos: v(0, 3, small ? 40 : 30).add(c), look: v(0, small ? -2 : -.5, 0).add(c) }, handover('company', 'outro', q, t));   // the mark rides high, above the closing copy
     offset *= 1 - smooth(.2, .7, q);
-    flash = Math.exp(-(((q - .5) / .07) ** 2)) * 2.5;
-    thin = 1 - .5 * smooth(.4, .55, q);   // the mark is small: half the dust, a little brighter, drawn far faster; the flash hides the switch
-    overlayKey = 'outro';
+    flash = Math.exp(-(((q - .5) / .07) ** 2)) * 2.5;    overlayKey = 'outro';
     overlayAmt = w.p > .74 ? 1 : 0;
   }
 
@@ -413,8 +412,7 @@ gsap.ticker.add(time => {
   sound.update(carry);
   const u = river.uniforms;
   u.uTime.value = t;
-  u.uDensity.value = quality.density * thin;
-  ambience.uniforms.uDensity.value = quality.density;
+  u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
   u.uReveal.value = reveal;
   river.points.visible = reveal > .001;   // before the glass breaks the dust is transparent: skip drawing it
   u.uFocus.value = camPos.distanceTo(camLook);

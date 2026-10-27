@@ -48,9 +48,13 @@ export function createParcel() {
     box.position.copy(at);
     box.rotation.set(time * .5, time * .35, 0);
     box.scale.setScalar(.3 + .7 * vis);
-    box.material.opacity = tail.material.opacity = vis;
     if (fresh) { history.forEach(h => h.copy(at)); fresh = false; }
     history.unshift(history.pop().copy(at));   // reuse the oldest vector as the newest
+    // A tail only while moving: at rest its points would pile onto the cube, often right by the lens.
+    const moving = Math.min(1, history[0].distanceTo(history[12]) * 2);
+    box.material.opacity = vis;
+    tail.material.opacity = vis * moving;
+    tail.visible = moving > .01;
     for (let i = 0; i < n; i++) {
       const h = history[Math.floor(i / PER)];
       pos[i * 3] = h.x + jitter[i * 3];
