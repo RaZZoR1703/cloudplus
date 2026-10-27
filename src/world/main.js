@@ -178,10 +178,20 @@ const PANELS = {
   },
 };
 const num = n => n.toLocaleString('ru-RU');
-let panelState = '';
+// Pointing at a panel lights its part of the scene; pointing at that spot in the scene lights the panel.
+let panelState = '', panelHover = false, hotAmt = 0, linked = false;
+for (const { el } of Object.values(panels)) {
+  el.addEventListener('pointerenter', () => { panelHover = true; });
+  el.addEventListener('pointerleave', () => { panelHover = false; });
+  el.addEventListener('focus', () => { panelHover = true; });
+  el.addEventListener('blur', () => { panelHover = false; });
+}
 function updatePanel(key, amount, t) {
   const panel = panels[key];
   thread.style.opacity = panel ? amount : 0;
+  hotAmt += ((panel && amount > .5 && linked ? 1 : 0) - hotAmt) * .12;
+  river.uniforms.uHotAmt.value = still ? (linked ? 1 : 0) * Number(!!panel) : hotAmt;
+  if (panel) river.uniforms.uHot.value = Number(panel.el.dataset.hot);
   if (!panel || amount < .01) return;
   const v = PANELS[key](t), state = key + JSON.stringify(v);
   if (state !== panelState) {
@@ -198,6 +208,10 @@ function updatePanel(key, amount, t) {
   const px = r.left + r.width / 2, py = small ? r.bottom : r.top, bend = small ? -60 : 90;
   threadPath.setAttribute('d', `M${ax},${ay} C${ax},${ay + bend} ${px},${py - bend} ${px},${py}`);
   threadDot.setAttribute('cx', ax); threadDot.setAttribute('cy', ay);
+  const near = pointer.on && Math.hypot((pointer.x + .5) * innerWidth - ax, (pointer.y + .5) * innerHeight - ay) < 120;
+  linked = panelHover || near;
+  panel.el.classList.toggle('linked', linked);
+  thread.classList.toggle('linked', linked);
 }
 
 // ---------- Chapter overlays ----------

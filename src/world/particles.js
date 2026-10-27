@@ -268,7 +268,7 @@ const vertexShader = /* glsl */`
 attribute vec4 aA;
 attribute vec4 aB;
 attribute float aRand;
-uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity, uFlash;
+uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity, uFlash, uHot, uHotAmt;
 uniform float uModules[6];
 uniform vec2 uWheels;
 uniform vec3 uMouse, uView;
@@ -341,6 +341,11 @@ void main() {
   float edge = step(.5, kind) * step(kind, 1.5) + step(11.5, group) * step(group, 12.5);
   gl_PointSize = uSize * (1. + blur * 2.2) * (1. + edge * .35) / -mv.z;
   vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.) * inversesqrt(uDensity) * (1. + uFlash);
+  // The part the live panel talks about lights up while either is pointed at; the rest steps back.
+  float hot = uHotAmt * (abs(group - uHot) < .5 ? 1. : -.45);
+  vAlpha *= 1. + hot * .85;
+  gl_PointSize *= 1. + max(hot, 0.) * .35;
+  vGlow = max(vGlow, hot);
   if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
   vGlow = max(edge, aRand * aRand);
   gl_Position = projectionMatrix * mv;
@@ -372,7 +377,7 @@ export function createParticles(n) {
     uniforms: {
       uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 99) }, uMouseOn: { value: 0 }, uView: { value: new THREE.Vector3(0, 0, 1) },
-      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 }, uFlash: { value: 0 },
+      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 }, uFlash: { value: 0 }, uHot: { value: -1 }, uHotAmt: { value: 0 },
       uModules: { value: [0, 0, 0, 0, 0, 0] },
     },
   });
