@@ -15,9 +15,9 @@ function dot() {
 }
 
 /**
- * One order, carried through the whole site: a glowing parcel with a comet tail that flies
- * from one business to the next while the scene changes. update(from, to, k, time) puts it
- * k (0 … 1) of the way along an arc between two points; outside 0 … 1 it rests hidden.
+ * The order itself: a glowing cube with a comet tail. Each business hands it on: the business is
+ * drawn into the cube, the cube flies to the next one and bursts into it. update(at, vis, time)
+ * places it; vis 0 hides it.
  */
 export function createParcel() {
   const group = new THREE.Group();
@@ -35,30 +35,20 @@ export function createParcel() {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 60);
   const tail = new THREE.Points(geo, new THREE.PointsMaterial({
     size: .3, map: dot(), vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
   }));
+  tail.frustumCulled = false;
   group.add(tail);
-
-  const at = new THREE.Vector3(), mid = new THREE.Vector3();
   let fresh = true;
 
-  function update(from, to, k, time) {
-    const on = k > 0 && k < 1;
-    group.visible = on;
-    if (!on) { fresh = true; return; }
-    // A raised arc from one business to the next: a quadratic curve through a point above the middle.
-    mid.lerpVectors(from, to, .5).y += 5 + from.distanceTo(to) * .3;   // high above the swirling dust
-    const e = k * k * (3 - 2 * k), u = 1 - e;
-    at.copy(from).multiplyScalar(u * u).addScaledVector(mid, 2 * u * e).addScaledVector(to, e * e);
+  function update(at, vis, time) {
+    group.visible = vis > .001;
+    if (!group.visible) { fresh = true; return; }
     box.position.copy(at);
     box.rotation.set(time * 2.1, time * 1.4, 0);
-    // Fade in on take-off and out on landing.
-    const vis = Math.min(1, k * 8, (1 - k) * 8);
-    box.scale.setScalar(.4 + .6 * vis);
-    box.material.opacity = vis;
-    tail.material.opacity = vis;
+    box.scale.setScalar(.3 + .7 * vis);
+    box.material.opacity = tail.material.opacity = vis;
     if (fresh) { history.forEach(h => h.copy(at)); fresh = false; }
     history.unshift(history.pop().copy(at));   // reuse the oldest vector as the newest
     for (let i = 0; i < n; i++) {
@@ -70,6 +60,13 @@ export function createParcel() {
     geo.attributes.position.needsUpdate = true;
   }
 
-  update(null, null, 0, 0);
   return { group, update };
+}
+
+/** A raised arc between two points, high above the dust: k 0 … 1 along it, into out. */
+export function arc(from, to, k, out) {
+  const mid = from.clone().lerp(to, .5);
+  mid.y += 5 + from.distanceTo(to) * .12;
+  const e = k * k * (3 - 2 * k), u = 1 - e;
+  return out.copy(from).multiplyScalar(u * u).addScaledVector(mid, 2 * u * e).addScaledVector(to, e * e);
 }

@@ -257,7 +257,6 @@ function shapes(n) {
       }
       return out;
     },
-    core: () => ball(n, .35),
     // The finale: the Cloudplus mark, or the wordmark if the SVG has not loaded.
     outro: () => markImage.complete && markImage.naturalWidth ? painted(n, 800, 600, 11, 3.2, x => x.drawImage(markImage, 40, 30, 720, 540)) : text(n, 'Cloudplus', 21),
   };
@@ -268,10 +267,10 @@ const vertexShader = /* glsl */`
 attribute vec4 aA;
 attribute vec4 aB;
 attribute float aRand;
-uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity, uFlash, uHot, uHotAmt;
+uniform float uPhase, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity, uFlash, uHot, uHotAmt;
 uniform float uModules[6];
 uniform vec2 uWheels;
-uniform vec3 uMouse, uView;
+uniform vec3 uMouse, uView, uOffA, uOffB, uCube;
 varying float vAlpha, vGlow;
 vec3 flow(vec3 p, float t) {
   return vec3(sin(p.y * .35 + t * .7) + sin(p.z * .21 - t * .4),
@@ -279,14 +278,15 @@ vec3 flow(vec3 p, float t) {
               sin(p.x * .27 - t * .8) + sin(p.y * .23 + t * .3));
 }
 void main() {
-  // Each particle leaves at its own moment, swirls out along a flow field and lands in the new shape.
-  float k = smoothstep(0., 1., clamp(uMix * 1.7 - aRand * .7, 0., 1.));
-  vec3 p = mix(aA.xyz, aB.xyz, k);
-  float kind = k < .5 ? aA.w : aB.w;
+  // A hand-over between businesses: in the first half shape A is drawn into the order cube, in the
+  // second the cube bursts into shape B. Moving parts animate in each shape's own frame first.
+  bool second = uPhase >= .5;
+  vec4 src = second ? aB : aA;
+  vec3 p = src.xyz;
+  float kind = src.w;
   float group = floor(kind / 10.);
   kind -= group * 10.;
-  float swirl = sin(3.14159 * k);
-  p += flow(p * .5 + aRand * 6., uTime) * (swirl * 2.6 + .035);
+  p += flow(p * .5 + aRand * 6., uTime) * .035;
   vAlpha = 1.;
   if (kind > 1.5 && kind < 2.5) {   // smoke: rises, drifts with the wind and fades
     float h = fract(uTime * .07 + aRand * 5.);
@@ -332,6 +332,19 @@ void main() {
       vAlpha *= max(1. - smoothstep(.5, .6, c), smoothstep(.93, 1., c));
     } else p.y += (3.85 - p.y) * .92 * smoothstep(.36, .48, c) * (1. - smoothstep(.72, .88, c));   // the door rolls up
   }
+  // Each particle leaves (or lands) at its own moment, so the shape unravels instead of shrinking.
+  p += second ? uOffB : uOffA;
+  vec3 toCube = p - uCube;
+  if (second) {
+    float b = smoothstep(0., 1., clamp((uPhase - .65) / .35 * 1.5 - aRand * .5, 0., 1.));
+    float burst = sin(3.14159 * b);
+    p = uCube + toCube * b + normalize(toCube + 1e-4) * burst * 1.8 + flow(p * .4 + aRand * 5., uTime) * burst;
+    vAlpha *= .2 + .8 * b;
+  } else {
+    float a = smoothstep(0., 1., clamp(uPhase / .35 * 1.5 - aRand * .5, 0., 1.));
+    p = uCube + toCube * (1. - a) * (1. - a) + flow(p * .4 + aRand * 5., uTime) * sin(3.14159 * a) * 1.4;
+    vAlpha *= 1. - a * .8;
+  }
   // The pointer parts the particles and stirs them round it.
   vec3 d = p - uMouse;
   float m = exp(-dot(d, d) / 5.) * uMouseOn;
@@ -345,9 +358,8 @@ void main() {
   float hot = uHotAmt * (abs(group - uHot) < .5 ? 1. : -.45);
   vAlpha *= 1. + hot * .85;
   gl_PointSize *= 1. + max(hot, 0.) * .35;
-  vGlow = max(vGlow, hot);
+  vGlow = max(max(edge, aRand * aRand), hot);
   if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
-  vGlow = max(edge, aRand * aRand);
   gl_Position = projectionMatrix * mv;
 }`;
 const fragmentShader = /* glsl */`
@@ -371,11 +383,11 @@ export function createParticles(n) {
   geo.setAttribute('aA', a);
   geo.setAttribute('aB', b);
   geo.setAttribute('aRand', new THREE.BufferAttribute(r, 1));
-  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 2, 0), 30);
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e4);   // the shapes stand far apart: never cull
   const material = new THREE.ShaderMaterial({
     vertexShader, fragmentShader, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     uniforms: {
-      uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
+      uPhase: { value: 1 }, uOffA: { value: new THREE.Vector3() }, uOffB: { value: new THREE.Vector3() }, uCube: { value: new THREE.Vector3() }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 99) }, uMouseOn: { value: 0 }, uView: { value: new THREE.Vector3(0, 0, 1) },
       uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 }, uFlash: { value: 0 }, uHot: { value: -1 }, uHotAmt: { value: 0 },
       uModules: { value: [0, 0, 0, 0, 0, 0] },
@@ -387,13 +399,16 @@ export function createParticles(n) {
   return {
     points,
     uniforms: material.uniforms,
-    show(from, to, mix) {
+    /** Hand-over from shape `from` (placed at offA) to `to` (at offB) at phase 0 … 1, through the cube at `cube`. */
+    show(from, to, phase, offA, offB, cube) {
       if (`${from}>${to}` !== pair) {
         pair = `${from}>${to}`;
         a.array.set(get(from)); b.array.set(get(to));
         a.needsUpdate = b.needsUpdate = true;
       }
-      material.uniforms.uMix.value = mix;
+      const u = material.uniforms;
+      u.uPhase.value = phase;
+      u.uOffA.value.copy(offA); u.uOffB.value.copy(offB); u.uCube.value.copy(cube);
     },
   };
 }

@@ -11,7 +11,7 @@ import Lenis from 'lenis';
 import { createBlockCloud } from './blockCloud.js';
 import { createSky, createCloudSea, createMotes, PALETTE } from './atmosphere.js';
 import { createParticles, createAmbience } from './particles.js';
-import { createParcel } from './parcel.js';
+import { createParcel, arc } from './parcel.js';
 
 gsap.registerPlugin(ScrollTrigger);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -51,14 +51,30 @@ const ambience = createAmbience(small ? 12000 : 30000);
 scene.add(ambience.points);
 const SHAPES = ['production', 'warehouse', 'distribution', 'retail'];
 
-// One order through the whole site: between chapters a parcel flies from where the last business
-// hands it on (the conveyor's end, the right dock door, the truck's back) to where the next takes it in.
+// One order through the whole site. The businesses stand apart along the way; each hands the order on
+// as a glowing cube: the business is drawn into it at its exit, the cube flies on and bursts into the next.
 const parcel = createParcel();
 scene.add(parcel.group);
 const v = (x, y, z) => new THREE.Vector3(x, y, z);
-const ENTRY = { production: v(0, 1.6, 2.6), warehouse: v(-3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6) };
-const EXIT = { production: v(7, .9, 3.4), warehouse: v(3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6) };
+const PLACE = { cloud: v(0, 0, 0), production: v(36, 0, -6), warehouse: v(72, 0, 4), distribution: v(108, 0, -6), retail: v(144, 0, 4), company: v(180, 0, 0), outro: v(180, 0, 0) };
 const CLOUD = v(0, .6, 0), CORE = v(0, 1.6, 0);
+// Where, in each shape's own frame, the order leaves (the conveyor's end, the right dock door, the truck's back) and arrives.
+const EXIT = { cloud: CLOUD, production: v(7, .9, 3.4), warehouse: v(3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6), company: CORE };
+const ENTRY = { production: v(0, 1.6, 2.6), warehouse: v(-3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6), company: CORE, outro: CORE };
+const cube = new THREE.Vector3();
+let handing = false;   // set when this frame runs a hand-over; otherwise the cube is hidden
+/** Shape `name` standing still at its place. */
+function settle(name) { river.show(name, name, 1, PLACE[name], PLACE[name], PLACE[name]); }
+/** The hand-over from one business to the next at q (0 … 1); returns how far the camera should have moved (0 … 1). */
+function handover(from, to, q, t) {
+  const A = EXIT[from].clone().add(PLACE[from]), B = ENTRY[to].clone().add(PLACE[to]);
+  handing = true;
+  arc(A, B, smooth(.32, .68, q), cube);
+  river.show(from, to, q, PLACE[from], PLACE[to], cube);
+  parcel.update(cube, smooth(.18, .32, q) * (1 - smooth(.68, .82, q)), t);
+  return smooth(.22, .78, q);
+}
+const mixPose = (a, b, k) => ({ pos: a.pos.lerp(b.pos, k), look: a.look.lerp(b.look, k) });
 
 // ---------- Post ----------
 const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
@@ -118,19 +134,19 @@ resize();
 const Y = new THREE.Vector3(0, 1, 0);
 /** Over the configurator's ring: high enough to see every slot, turning slowly as the visitor scrolls. */
 function companyPose(p) {
-  const ang = .5 + p * .7, dist = small ? 30 : 23;
+  const ang = .5 + p * .7, dist = small ? 30 : 23, c = PLACE.company;
   return {
-    pos: new THREE.Vector3(Math.sin(ang) * dist, small ? 17 : 13, Math.cos(ang) * dist),
-    look: new THREE.Vector3(0, small ? -7 : .5, 0),   // on phones the ring rides above the module buttons
+    pos: new THREE.Vector3(Math.sin(ang) * dist, small ? 17 : 13, Math.cos(ang) * dist).add(c),
+    look: new THREE.Vector3(0, small ? -7 : .5, 0).add(c),   // on phones the ring rides above the module buttons
   };
 }
 
 /** Circling the shape: the scroll turns the camera a little way round it while a chapter plays. */
-function orbitPose(p, turn = 0) {
+function orbitPose(p, turn, c) {
   const ang = turn + (p - .5) * .9, dist = small ? 38 : 29;
   return {
-    pos: new THREE.Vector3(Math.sin(ang) * dist, 6.5 - p * 2, Math.cos(ang) * dist),
-    look: new THREE.Vector3(0, 2, 0),
+    pos: new THREE.Vector3(Math.sin(ang) * dist, 6.5 - p * 2, Math.cos(ang) * dist).add(c),
+    look: new THREE.Vector3(0, 2, 0).add(c),
   };
 }
 
@@ -202,7 +218,7 @@ function updatePanel(key, amount, t) {
     panel.status.textContent = v.status;
     panel.status.className = v.ok ? 'chip ok' : 'chip';
   }
-  const a = panel.anchor.clone().project(camera), r = panel.el.getBoundingClientRect();
+  const a = panel.anchor.clone().add(PLACE[key]).project(camera), r = panel.el.getBoundingClientRect();
   const ax = (a.x + 1) / 2 * innerWidth, ay = (1 - a.y) / 2 * innerHeight;
   // The panel sits under the scene on wide screens and above it on phones; the thread meets its nearest edge.
   const px = r.left + r.width / 2, py = small ? r.bottom : r.top, bend = small ? -60 : 90;
@@ -294,44 +310,46 @@ gsap.ticker.add(time => {
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
-  let flash = 0, flight = null, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  handing = false;
+  let flash = 0, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
     heroCopy.style.opacity = 1 - smooth(.3, .5, w.p);
     // The glass shatters into dust: particles take over the cloud's shape as the blocks fly apart.
     reveal = smooth(.1, .7, explode);
-    river.show('cloud', 'cloud', 1);
+    settle('cloud');
   } else if (w.phase === 'descend') {
-    const h = heroPose(1, t), o = orbitPose(0, turns[0]), k = smooth(0, 1, w.p);
-    target = { pos: h.pos.lerp(o.pos, k), look: h.look.lerp(o.look, k) };
+    // The order leaves the program: the cloud's dust is drawn into the cube, which flies to the factory.
+    const k = handover('cloud', 'production', w.p, t);
+    target = mixPose(heroPose(1, t), orbitPose(0, turns[0], PLACE.production), k);
     offset *= k;
-    river.show('cloud', 'production', smooth(.1, .95, w.p));
-    flight = [CLOUD, ENTRY.production, smooth(.15, .95, w.p)];   // the order leaves the program for the factory
   } else if (w.phase === 'chapter') {
-    const idx = SHAPES.indexOf(w.key);
-    target = orbitPose(w.p, turns[idx]);
-    river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .5, w.p) : 1);
-    if (idx) flight = [EXIT[SHAPES[idx - 1]], ENTRY[w.key], smooth(0, .5, w.p)];
+    // The first half of a chapter is the hand-over from the previous business; then the camera circles this one.
+    const idx = SHAPES.indexOf(w.key), place = PLACE[w.key];
+    if (idx && w.p < .5) {
+      const prev = SHAPES[idx - 1];
+      target = mixPose(orbitPose(1, turns[idx - 1], PLACE[prev]), orbitPose(0, turns[idx], place), handover(prev, w.key, w.p / .5, t));
+    } else {
+      settle(w.key);
+      target = orbitPose(idx ? (w.p - .5) / .5 : w.p, turns[idx], place);
+    }
     overlayKey = w.key;
-    overlayAmt = smooth(.4, .52, w.p) * (1 - smooth(.9, .98, w.p));
+    overlayAmt = (idx ? smooth(.52, .62, w.p) : smooth(.1, .2, w.p)) * (1 - smooth(.9, .98, w.p));
   } else if (w.phase === 'configure') {
-    // The visitor's company in miniature: the shop's particles regroup into a ring of businesses round a core.
-    target = companyPose(w.p);
-    river.show('retail', 'company', smooth(0, .35, w.p));
-    flight = [EXIT.retail, CORE, smooth(0, .35, w.p)];   // the sale goes back to the program
+    // The sale goes back to the program: the shop hands the cube to the core of the visitor's company.
+    if (w.p < .4) target = mixPose(orbitPose(1, turns[3], PLACE.retail), companyPose(0), handover('retail', 'company', w.p / .4, t));
+    else { settle('company'); target = companyPose((w.p - .4) / .6); }
     overlayKey = 'configure';
-    overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.92, .99, w.p));
+    overlayAmt = smooth(.42, .52, w.p) * (1 - smooth(.92, .99, w.p));
   } else {
-    // Finale: the company spirals into the core, the core flares and opens into the Cloudplus mark.
-    const o = companyPose(1), k = smooth(.25, .65, w.p);
-    target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the mark rides high, above the closing copy
-    offset *= 1 - k;
-    if (w.p < .3) river.show('company', 'core', smooth(0, .3, w.p));
-    else river.show('core', 'outro', smooth(.3, .62, w.p));
-    flash = Math.exp(-(((w.p - .31) / .05) ** 2)) * 2.5;
+    // Finale: the company is drawn into the cube at its core, which flares and opens into the Cloudplus mark.
+    const q = smooth(0, .7, w.p), c = PLACE.outro;
+    target = mixPose(companyPose(1), { pos: v(0, 3, small ? 40 : 30).add(c), look: v(0, small ? -2 : -.5, 0).add(c) }, handover('company', 'outro', q, t));   // the mark rides high, above the closing copy
+    offset *= 1 - smooth(.2, .7, q);
+    flash = Math.exp(-(((q - .5) / .07) ** 2)) * 2.5;
     overlayKey = 'outro';
-    overlayAmt = smooth(.55, .75, w.p);
+    overlayAmt = smooth(.75, .9, w.p);
   }
 
   // Ease the camera towards its target: the scroll is already smoothed, this removes jitter.
@@ -351,7 +369,7 @@ gsap.ticker.add(time => {
   for (let i = 0; i < 6; i++) picked[i] += ((chosen.has(i) ? 1 : 0) - picked[i]) * (still ? 1 : .08);
   cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
   river.uniforms.uFlash.value = flash;
-  parcel.update(...(flight ?? [CLOUD, CLOUD, 0]), t);
+  if (!handing) parcel.update(cube, 0, t);
   const u = river.uniforms;
   u.uTime.value = t;
   u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
@@ -365,6 +383,8 @@ gsap.ticker.add(time => {
   ray.ray.intersectPlane(plane, u.uMouse.value);
   u.uView.value.copy(view);
   u.uMouseOn.value = still ? 0 : lean.on;
+  // Streams and dust travel with the camera, so every place along the way has them.
+  ambience.points.position.set(camLook.x, 0, camLook.z);
   const am = ambience.uniforms;
   am.uTime.value = t;
   am.uSize.value = u.uSize.value;
