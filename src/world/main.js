@@ -12,6 +12,7 @@ import { createBlockCloud } from './blockCloud.js';
 import { createSky, createCloudSea, createMotes, PALETTE } from './atmosphere.js';
 import { createParticles, createAmbience } from './particles.js';
 import { createParcel, arc } from './parcel.js';
+import { createSound } from './sound.js';
 
 gsap.registerPlugin(ScrollTrigger);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -64,6 +65,8 @@ const EXIT = { cloud: CLOUD, production: v(7, .9, 3.4), warehouse: v(3.3, 1.5, 2
 const ENTRY = { production: v(0, 1.6, 2.6), warehouse: v(-3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6), company: CORE, outro: CORE };
 const cube = new THREE.Vector3();
 let handing = false, carry = 0;   // set when this frame runs a hand-over (otherwise the cube is hidden), and how visible the cube is
+const sound = createSound();
+let lastHand = { pair: '', q: 0 };   // to hear the moment a hand-over passes its burst
 /** Shape `name` standing still at its place. */
 function settle(name) { river.show(name, name, 1, PLACE[name], PLACE[name], PLACE[name]); }
 /** The hand-over from one business to the next at q (0 … 1); returns how far the camera should have moved (0 … 1). */
@@ -75,6 +78,10 @@ function handover(from, to, q, t) {
   river.show(from, to, q, PLACE[from], PLACE[to], cube);
   carry = smooth(.14, .3, q) * (1 - smooth(.7, .86, q));
   parcel.update(cube, carry, t);
+  // Played forward past the burst (the finale's flash comes at .5): a chime, or the closing swell.
+  const pair = from + to, at = to === 'outro' ? .5 : .72;
+  if (pair === lastHand.pair && lastHand.q < at && q >= at) to === 'outro' ? sound.swell() : sound.chime(Object.keys(PLACE).indexOf(to));
+  lastHand = { pair, q };
   return smooth(.2, .8, q);
 }
 const mixPose = (a, b, k) => ({ pos: a.pos.lerp(b.pos, k), look: a.look.lerp(b.look, k) });
@@ -259,6 +266,7 @@ document.querySelectorAll('[data-module]').forEach(btn => {
   btn.addEventListener('click', () => {
     chosen.has(i) ? chosen.delete(i) : chosen.add(i);
     btn.setAttribute('aria-pressed', chosen.has(i));
+    sound.tick(chosen.has(i));
     renderConfig();
   });
 });
@@ -278,6 +286,9 @@ if (still) playBtn.hidden = true;   // reduced motion: no scene to watch play
 playBtn.addEventListener('click', () => setAuto(!auto.on));
 const stopAuto = e => { if (auto.on && !(e.type === 'keydown' && playBtn.contains(e.target))) setAuto(false); };   // Enter or Space on the button is its own click
 for (const type of ['wheel', 'touchstart', 'keydown']) addEventListener(type, stopAuto, { passive: true });
+
+const soundBtn = document.querySelector('.sound');
+soundBtn.addEventListener('click', () => soundBtn.setAttribute('aria-pressed', sound.toggle()));
 
 // ---------- Loading: the screen lifts once fonts are in and the first frames are drawn ----------
 let readyAt = -1;
@@ -328,6 +339,7 @@ gsap.ticker.add(time => {
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
   handing = false;
+  carry = 0;
   let flash = 0, thin = 1, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
@@ -398,6 +410,7 @@ gsap.ticker.add(time => {
   cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
   river.uniforms.uFlash.value = flash;
   if (!handing) parcel.update(cube, 0, t);
+  sound.update(carry);
   const u = river.uniforms;
   u.uTime.value = t;
   u.uDensity.value = quality.density * thin;

@@ -104,8 +104,13 @@ main { position: relative; z-index: 2; }
 
 /* ---------- Autoplay ---------- */
 .topbar-actions { display: flex; gap: 10px; }
-.play { gap: 10px; cursor: pointer; }
-.play svg { width: 14px; height: 14px; fill: currentColor; }
+.play, .sound { gap: 10px; cursor: pointer; }
+.play svg, .sound svg { width: 14px; height: 14px; fill: currentColor; }
+.sound svg { stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sound .i-on, .sound[aria-pressed="true"] .i-off { display: none; }
+.sound[aria-pressed="true"] .i-on { display: block; }
+.sound svg path { fill: none; }
+.sound[aria-pressed="true"] { border-color: var(--blue); }
 .play .i-pause, .play.on .i-play { display: none; }
 .play.on .i-pause { display: block; }
 
@@ -121,8 +126,8 @@ main { position: relative; z-index: 2; }
 
 @media (max-width: 820px) {
   .brand span { display: none; }
-  .play span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }   /* icon only, still named for screen readers */
-  .play { padding: 0 16px; }
+  .play span, .sound span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }   /* icon only, still named for screen readers */
+  .play, .sound { padding: 0 16px; }
   .hero-copy { max-width: none; right: var(--pad); bottom: 9svh; }
   .cue { display: none; }
   .ov { bottom: 24px; }
