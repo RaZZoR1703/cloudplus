@@ -106,6 +106,15 @@ resize();
 
 // ---------- Camera poses ----------
 const Y = new THREE.Vector3(0, 1, 0);
+/** Over the configurator's ring: high enough to see every slot, turning slowly as the visitor scrolls. */
+function companyPose(p) {
+  const ang = .5 + p * .7, dist = small ? 30 : 23;
+  return {
+    pos: new THREE.Vector3(Math.sin(ang) * dist, small ? 17 : 13, Math.cos(ang) * dist),
+    look: new THREE.Vector3(0, small ? -7 : .5, 0),   // on phones the ring rides above the module buttons
+  };
+}
+
 /** Circling the shape: the scroll turns the camera a little way round it while a chapter plays. */
 function orbitPose(p, turn = 0) {
   const ang = turn + (p - .5) * .9, dist = small ? 38 : 29;
@@ -193,11 +202,13 @@ function showOverlay(key, amount) {
 }
 
 // ---------- Configurator: the visitor picks modules, the cloud builds from them ----------
-const chosen = new Set([0, 1, 3]), picked = [1, 1, 0, 1, 0, 0];
+// Module i is slot i of the 'company' shape: its miniature business, collapsed into the core while unpicked.
+const MODULES = ['Склад', 'Касса', 'Обмен с 1С', 'Продажи', 'Производство', 'Заказы и доставка'];
+const chosen = new Set([0, 1, 3]), picked = river.uniforms.uModules.value;
 const plural = n => (n % 10 === 1 && n % 100 !== 11 ? 'модуль' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'модуля' : 'модулей');
 const configCount = document.querySelector('[data-config-count]'), configCta = document.querySelector('[data-config-cta]');
 function renderConfig() {
-  const names = [...chosen].sort().map(i => cloud.names[i]);
+  const names = [...chosen].sort().map(i => MODULES[i]);
   configCount.textContent = names.length ? `В сборке ${names.length} ${plural(names.length)}` : 'Отметьте хотя бы один модуль';
   configCta.href = `https://cloudplus.uz/?modules=${encodeURIComponent(names.join(', '))}`;
 }
@@ -259,7 +270,7 @@ gsap.ticker.add(time => {
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
-  let modules = null, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  let flash = 0, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
@@ -279,22 +290,19 @@ gsap.ticker.add(time => {
     overlayKey = w.key;
     overlayAmt = smooth(.4, .52, w.p) * (1 - smooth(.9, .98, w.p));
   } else if (w.phase === 'configure') {
-    // Back to the glass cloud: the shop's particles gather into its shape, then glass takes over.
-    target = heroPose(0, t); offset = 0;
-    if (small) target.look.y -= 3.4;   // on phones the cloud rides above the module buttons
-    const k = smooth(0, .35, w.p);
-    explode = 1 - k; reveal = 1 - smooth(.15, .4, w.p);
-    river.show('retail', 'cloud', smooth(0, .3, w.p));
-    modules = picked;
+    // The visitor's company in miniature: the shop's particles regroup into a ring of businesses round a core.
+    target = companyPose(w.p);
+    river.show('retail', 'company', smooth(0, .35, w.p));
     overlayKey = 'configure';
     overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.92, .99, w.p));
   } else {
-    // The cloud shatters again; its dust writes the wordmark.
-    explode = smooth(0, .3, w.p); reveal = smooth(0, .2, w.p); modules = picked;
-    const o = heroPose(0, t), k = smooth(0, .6, w.p);
-    target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the wordmark rides high, above the closing copy
-    offset = 0;
-    river.show('cloud', 'outro', smooth(.1, .55, w.p));
+    // Finale: the company spirals into the core, the core flares and opens into the Cloudplus mark.
+    const o = companyPose(1), k = smooth(.25, .65, w.p);
+    target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the mark rides high, above the closing copy
+    offset *= 1 - k;
+    if (w.p < .3) river.show('company', 'core', smooth(0, .3, w.p));
+    else river.show('core', 'outro', smooth(.3, .62, w.p));
+    flash = Math.exp(-(((w.p - .31) / .05) ** 2)) * 2.5;
     overlayKey = 'outro';
     overlayAmt = smooth(.55, .75, w.p);
   }
@@ -310,11 +318,12 @@ gsap.ticker.add(time => {
   camera.filmOffset += (offset - camera.filmOffset) * (still ? 1 : .08);
   camera.updateProjectionMatrix();
 
-  cloud.group.visible = (w.phase === 'hero' || w.phase === 'configure' || w.phase === 'outro') && explode < .999;   // past that every block has shrunk to nothing
+  cloud.group.visible = w.phase === 'hero' && explode < .999;   // by then every block has shrunk to nothing
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
   // The cloud builds itself only once the loading screen has lifted.
   for (let i = 0; i < 6; i++) picked[i] += ((chosen.has(i) ? 1 : 0) - picked[i]) * (still ? 1 : .08);
-  cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean, modules);
+  cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
+  river.uniforms.uFlash.value = flash;
   const u = river.uniforms;
   u.uTime.value = t;
   u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;

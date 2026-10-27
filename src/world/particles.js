@@ -80,19 +80,30 @@ function cloud(n) {
 
 /** Points filling text, standing upright, from a canvas drawing of it. */
 function text(n, words, width) {
+  return painted(n, 1400, 300, width, 2.6, x => {
+    x.font = '600 220px Onest, Geist, sans-serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(words, 700, 160);
+  });
+}
+
+// The Cloudplus mark, drawn from the same SVG as the header logo.
+const markImage = new Image();
+markImage.src = './mark-white.svg';
+
+/** Points filling whatever paint() draws in white on a w × h canvas, standing upright: width wide, centred at height lift. */
+function painted(n, w, h, width, lift, paint) {
   const c = document.createElement('canvas');
-  c.width = 1400; c.height = 300;
+  c.width = w; c.height = h;
   const x = c.getContext('2d');
   x.fillStyle = '#fff';
-  x.font = '600 220px Onest, Geist, sans-serif';
-  x.textAlign = 'center'; x.textBaseline = 'middle';
-  x.fillText(words, 700, 160);
-  const data = x.getImageData(0, 0, 1400, 300).data, lit = [];
-  for (let py = 0; py < 300; py += 2) for (let px = 0; px < 1400; px += 2) if (data[(py * 1400 + px) * 4 + 3] > 128) lit.push(px, py);
-  const out = new Float32Array(n * 4), k = width / 1400;
+  paint(x);
+  const data = x.getImageData(0, 0, w, h).data, lit = [];
+  for (let py = 0; py < h; py += 2) for (let px = 0; px < w; px += 2) if (data[(py * w + px) * 4 + 3] > 128) lit.push(px, py);
+  const out = new Float32Array(n * 4), k = width / w;
   for (let i = 0; i < n; i++) {
     const j = Math.floor(rand() * lit.length / 2) * 2;
-    out.set([(lit[j] - 700 + rand() * 2) * k, (150 - lit[j + 1] + rand() * 2) * k + 2.6, (rand() - .5) * .5, rand() < .3 ? 1 : 0], i * 4);
+    out.set([(lit[j] - w / 2 + rand() * 2) * k, (h / 2 - lit[j + 1] + rand() * 2) * k + lift, (rand() - .5) * .5, rand() < .3 ? 1 : 0], i * 4);
   }
   return out;
 }
@@ -104,6 +115,17 @@ let truck = null;
 const truckLoaded = Promise.all(['truck-points.bin', 'truck-points.json'].map(f => fetch(`./world/${f}`)))
   .then(async ([bin, json]) => { if (bin.ok && json.ok) truck = { pts: new Int16Array(await bin.arrayBuffer()), ...await json.json() }; })
   .catch(() => {});
+
+const CORE = [0, 1.6, 0];
+/** n points in a ball of radius r at the core. */
+function ball(n, r, kind = 1) {
+  const out = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const u = rand() * 2 - 1, a = rand() * Math.PI * 2, q = Math.sqrt(1 - u * u), d = r * Math.cbrt(rand());
+    out.set([CORE[0] + q * Math.cos(a) * d, CORE[1] + u * d, CORE[2] + q * Math.sin(a) * d, kind], i * 4);
+  }
+  return out;
+}
 
 function shapes(n) {
   // Warehouse: a gabled hangar with three roll-up dock doors, a forklift and pallets outside.
@@ -133,8 +155,22 @@ function shapes(n) {
     return [x - w / 2 + dx, 1.9 + dy, 2.52, 1];
   };
   const slats = door => () => [door * 3.3 + (rand() - .5) * 2.3, 1.1 + Math.floor(rand() * 11) * .25, 2.55];   // slats catch the light
+  const oneC = () => {   // the 1C exchange: «1С» standing on a ring
+    const t = text(Math.floor(n * .7), '1С', 4.5);
+    return build(n, { cyls: [[0, .05, 0, 2.6, .1]], extra: [{ count: t.length / 4, at: j => [t[j * 4], t[j * 4 + 1] - .6, t[j * 4 + 2], t[j * 4 + 3]] }] });
+  };
+  const sales = () => {   // sales: a rising bar chart with its trend line
+    const bars = [1.4, 2.2, 1.8, 3, 3.9];
+    return build(n, {
+      boxes: bars.map((h, i) => [-3.2 + i * 1.6, h / 2, 0, 1, h, 1]),
+      extra: [{ count: Math.floor(n * .12), at: () => {
+        const t = rand() * 4, i = Math.floor(t);
+        return [-3.2 + t * 1.6, bars[i] + (bars[Math.min(4, i + 1)] - bars[i]) * (t - i) + .6, 0];
+      } }],
+    });
+  };
   // Shapes are built on first use: the shop's sign and the wordmark need the web font.
-  return {
+  const makers = {
     cloud: () => cloud(n),
     production: () => build(n, {
       boxes: [[0, 1.6, 0, 10, 3.2, 5], [-6.6, 1.1, .6, 3, 2.2, 3.8], [-6.2, .9, 2.52, 1.4, 1.8, .04],   // hall, annex, its gate
@@ -198,15 +234,42 @@ function shapes(n) {
         ground: .06,
       });
     },
-    outro: () => text(n, 'Cloudplus', 21),
+    // The configurator: the visitor's company in miniature, six module slots round a glowing core.
+    // Slot s is group 20 + s; the shader collapses unpicked slots into the core. kind 4 = data flowing in.
+    company: () => {
+      const out = new Float32Array(n * 4), per = Math.floor(n * .13), flows = Math.floor(n * .02);
+      const minis = [makers.warehouse(), makers.retail(), oneC(), sales(), makers.production(), makers.distribution()];
+      let i = 0;
+      minis.forEach((src, slot) => {
+        const a = slot / 6 * Math.PI * 2 + Math.PI / 2, cx = Math.cos(a) * 5.2, cz = Math.sin(a) * 5.2, group = (20 + slot) * 10;
+        for (let j = 0; j < per;) {
+          const q = Math.floor(rand() * n) * 4;
+          if (src[q + 3] % 10 === 3) continue;   // no ground under the miniatures
+          out.set([cx + src[q] * .26, src[q + 1] * .26, cz + src[q + 2] * .26, (src[q + 3] % 10) + group], i++ * 4);
+          j++;
+        }
+        for (let j = 0; j < flows; j++) out.set([cx + (rand() - .5) * .6, .6 + rand() * .6, cz + (rand() - .5) * .6, 4 + group], i++ * 4);
+      });
+      const core = ball(n - i, .9);
+      for (let j = 0; i < n; j++, i++) {   // a bright ball and a ring round it
+        if (j % 3) out.set(core.subarray(j * 4, j * 4 + 4), i * 4);
+        else { const a = rand() * Math.PI * 2; out.set([Math.cos(a) * 1.7, CORE[1], Math.sin(a) * 1.7, 1], i * 4); }
+      }
+      return out;
+    },
+    core: () => ball(n, .35),
+    // The finale: the Cloudplus mark, or the wordmark if the SVG has not loaded.
+    outro: () => markImage.complete && markImage.naturalWidth ? painted(n, 800, 600, 11, 3.2, x => x.drawImage(markImage, 40, 30, 720, 540)) : text(n, 'Cloudplus', 21),
   };
+  return makers;
 }
 
 const vertexShader = /* glsl */`
 attribute vec4 aA;
 attribute vec4 aB;
 attribute float aRand;
-uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity;
+uniform float uMix, uTime, uSize, uFocus, uReveal, uMouseOn, uWheelY, uDensity, uFlash;
+uniform float uModules[6];
 uniform vec2 uWheels;
 uniform vec3 uMouse, uView;
 varying float vAlpha, vGlow;
@@ -230,7 +293,18 @@ void main() {
     p += vec3(h * h * 2.5, h * 4.2, 0.) + flow(p, uTime) * h * .5;
     vAlpha = (1. - h) * .7;
   }
-  if (group > 7.5) {
+  if (group > 19.5) {   // GROUPS 20–25: the configurator's six modules round the core
+    vec3 core = vec3(0., 1.6, 0.);
+    float m = uModules[int(group - 19.5)];
+    if (kind > 3.5) {   // data flowing from the module into the core, arcing up on the way
+      float h = fract(uTime * .45 + aRand * 4.);
+      p = mix(p, core, h) + vec3(0., sin(h * 3.14159) * .9, 0.);
+      vAlpha *= sin(h * 3.14159);
+      kind = 1.;
+    }
+    p = mix(core, p, m);   // a module that is not picked waits inside the core
+    vAlpha *= m;
+  } else if (group > 7.5) {
     // GROUPS 8–13 move on their own: crates on the conveyor, the truck's wheels, road, body, the shop's sign and shoppers.
     if (group < 8.5) { float o = mod(p.x + uTime * .6, 7.); p.x = o; vAlpha *= smoothstep(0., .6, o) * smoothstep(7., 6.4, o); }
     else if (group < 9.5) {
@@ -266,7 +340,7 @@ void main() {
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);   // depth of field: out of focus = bigger, fainter
   float edge = step(.5, kind) * step(kind, 1.5) + step(11.5, group) * step(group, 12.5);
   gl_PointSize = uSize * (1. + blur * 2.2) * (1. + edge * .35) / -mv.z;
-  vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.) * inversesqrt(uDensity);
+  vAlpha *= uReveal / (1. + blur * 3.) * (kind > 2.5 ? .4 : 1.) * inversesqrt(uDensity) * (1. + uFlash);
   if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
   vGlow = max(edge, aRand * aRand);
   gl_Position = projectionMatrix * mv;
@@ -298,7 +372,8 @@ export function createParticles(n) {
     uniforms: {
       uMix: { value: 0 }, uTime: { value: 0 }, uSize: { value: 60 }, uFocus: { value: 24 }, uReveal: { value: 0 },
       uMouse: { value: new THREE.Vector3(0, 0, 99) }, uMouseOn: { value: 0 }, uView: { value: new THREE.Vector3(0, 0, 1) },
-      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 },
+      uWheels: { value: new THREE.Vector2(...WHEELS) }, uWheelY: { value: .62 }, uDensity: { value: 1 }, uFlash: { value: 0 },
+      uModules: { value: [0, 0, 0, 0, 0, 0] },
     },
   });
   const points = new THREE.Points(geo, material);

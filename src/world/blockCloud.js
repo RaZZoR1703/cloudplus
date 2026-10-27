@@ -203,8 +203,6 @@ export function createBlockCloud({ animateIn = true } = {}) {
   tileGlass.emissive = new THREE.Color('#2f7fd0');
   tileGlass.emissiveIntensity = .18;
   const SPOTS = [[-2.45, -.55], [-1.05, .95], [.65, 1.25], [2.2, .25], [-.25, -.45], [1.45, -.6]];
-  // Each block belongs to the module whose screen is nearest; the configurator builds the cloud from modules.
-  for (const b of blocks) b.mod = SPOTS.reduce((m, [x, y], i) => ((b.base.x - x) ** 2 + (b.base.y - y) ** 2 < (b.base.x - SPOTS[m][0]) ** 2 + (b.base.y - SPOTS[m][1]) ** 2 ? i : m), 0);
   const tiles = SPOTS.map(([x, y], i) => {
     // Find the cloud's front surface at (x, y) and sit the tile on it.
     let z = 2.2;
@@ -235,8 +233,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
   const hot = new THREE.Vector3();
   let lastDraw = -1;
 
-  /** modules (optional): how present each of the six modules is, 0 … 1; a missing module scatters like an explosion. */
-  function update(explode, time, hover = { x: 0, y: 0, on: 0 }, modules = null) {
+  function update(explode, time, hover = { x: 0, y: 0, on: 0 }) {
     const intro = t => animateIn ? clamp01(t) : 1;
     // Screens redraw at ~12 fps while the cloud is in view; a changed value starts a ripple.
     if (explode < 1 && time - lastDraw > .08) {
@@ -250,7 +247,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
       // Build-up on load: each block flies in from outside and settles, core first.
       const a = easeOut(intro((time - .15 - b.delay) / 1.4));
       // On scroll the outer shell peels off first, then the inner layers follow.
-      const k = Math.max(smooth01((explode - (1 - b.out) * .3) / .7), modules ? 1 - modules[b.mod] : 0);
+      const k = smooth01((explode - (1 - b.out) * .3) / .7);
       const breathe = Math.sin(time * .9 + b.drift * 6.28) * .012 * (1 - k);
       // The pointer presses a soft dent of light into the cloud.
       const near = Math.exp(-b.base.distanceToSquared(hot) / 1.6) * hover.on * (1 - k);
@@ -274,7 +271,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
       const u = t.userData;
       // Screens slide out of the cloud once it has formed, then switch on.
       const a = intro((time - u.delay) / 1.1), on = intro((time - u.delay - .5) / .6);
-      const k = Math.max(smooth01((explode - i * .04) / .76), modules ? 1 - modules[i] : 0);
+      const k = smooth01((explode - i * .04) / .76);
       t.position.copy(u.base).addScaledVector(u.dir, k * (2.2 + i * .35) - (1 - easeBack(a)) * .9);
       t.position.y += Math.sin(time * .7 + i) * .03;
       t.rotation.set(u.rot.x + k * (i - 2.5) * .25 + hover.y * .12 * hover.on, u.rot.y + k * (i % 2 ? .6 : -.6) + hover.x * .2 * hover.on, u.rot.z);
@@ -285,7 +282,7 @@ export function createBlockCloud({ animateIn = true } = {}) {
   }
 
   update(0, 0);
-  return { group, update, count: blocks.length, names: ['Склад', 'Касса', 'Обмен с 1С', 'Продажи', 'Производство', 'Заказы и доставка'] };
+  return { group, update, count: blocks.length };
 }
 
 function smooth01(v) { v = clamp01(v); return v * v * (3 - 2 * v); }
