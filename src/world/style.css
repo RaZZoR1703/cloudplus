@@ -38,12 +38,19 @@ main { position: relative; z-index: 2; }
 .cue span { width: 1px; height: 52px; background: linear-gradient(var(--blue), transparent); }
 
 .descend { height: 200svh; }
-.chapter { height: 260svh; }
+.chapter { height: 220svh; }
 .outro { height: 200svh; }
 
 /* ---------- Chapter overlays (fixed; the scroll loop fades them) ---------- */
 .overlays { position: fixed; inset: 0; z-index: 3; pointer-events: none; }
-.ov { position: absolute; left: var(--pad); right: var(--pad); bottom: clamp(40px, 8vh, 88px); opacity: 0; visibility: hidden; will-change: opacity, transform; }
+.ov { position: absolute; left: var(--pad); right: var(--pad); bottom: clamp(40px, 8vh, 88px); opacity: 0; visibility: hidden; transition: opacity .5s ease, visibility 0s .5s; }
+/* main.js adds .on; each line then rises out of a light blur, one after another, and the panel follows. */
+.ov.on { opacity: 1; visibility: visible; transition: opacity .4s ease, visibility 0s; }
+.ov > * { opacity: 0; transform: translateY(16px); filter: blur(6px); transition: opacity .35s ease, transform .35s ease, filter .35s ease; }
+.ov.on > * { opacity: 1; transform: none; filter: none; transition: opacity .8s var(--ease), transform 1s var(--ease), filter .8s var(--ease); }
+.ov.on > :nth-child(2) { transition-delay: .1s; }
+.ov.on > :nth-child(3) { transition-delay: .2s; }
+.ov.on > :nth-child(n+4) { transition-delay: .28s; }
 /* A soft dark pool behind the copy keeps it readable over the glowing glass. */
 .ov::before { content: ""; position: absolute; z-index: -1; left: calc(-1 * var(--pad)); bottom: -12vh; width: 62vw; height: 60vh; background: radial-gradient(closest-side at 30% 70%, rgba(5, 10, 20, .72), rgba(5, 10, 20, 0)); pointer-events: none; }
 .ov-outro::before { left: 50%; top: 50%; bottom: auto; width: 90vw; height: 70vh; transform: translate(-50%, -50%); background: radial-gradient(closest-side, rgba(5, 10, 20, .7), rgba(5, 10, 20, 0)); }
@@ -71,7 +78,8 @@ main { position: relative; z-index: 2; }
 .ov-config .cta { margin-top: 16px; }
 
 /* ---------- Live panel and its thread of light ---------- */
-.panel { pointer-events: auto; transition: border-color .3s var(--ease), box-shadow .3s var(--ease); position: absolute; bottom: clamp(40px, 8vh, 88px); right: var(--pad); width: min(340px, 30vw); padding: 18px; border-radius: 22px; color: var(--text); background: rgba(12, 22, 40, .55); border: 1px solid rgba(160, 205, 255, .22); box-shadow: 0 20px 60px rgba(0, 8, 24, .45), inset 0 1px 0 rgba(255, 255, 255, .12); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); opacity: 0; visibility: hidden; font-size: 15px; }
+.panel { pointer-events: auto; transform: translateY(14px) scale(.98); transition: border-color .3s var(--ease), box-shadow .3s var(--ease), opacity .35s ease, transform .35s ease, visibility 0s .35s; position: absolute; bottom: clamp(40px, 8vh, 88px); right: var(--pad); width: min(340px, 30vw); padding: 18px; border-radius: 22px; color: var(--text); background: rgba(12, 22, 40, .55); border: 1px solid rgba(160, 205, 255, .22); box-shadow: 0 20px 60px rgba(0, 8, 24, .45), inset 0 1px 0 rgba(255, 255, 255, .12); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); opacity: 0; visibility: hidden; font-size: 15px; }
+.panel.on { opacity: 1; visibility: visible; transform: none; transition: border-color .3s var(--ease), box-shadow .3s var(--ease), opacity .8s var(--ease) .25s, transform 1s var(--ease) .25s, visibility 0s; }
 .panel-head, .panel-meta, .panel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .panel-head b { font-size: 17px; font-weight: 600; }
 .panel-meta { margin-top: 14px; color: rgba(214, 232, 255, .7); }
@@ -83,7 +91,8 @@ main { position: relative; z-index: 2; }
 .chip { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; white-space: nowrap; color: rgba(214, 232, 255, .75); border: 1px solid rgba(255, 255, 255, .12); }
 .chip.info { color: var(--blue); background: rgba(63, 169, 245, .16); border-color: transparent; }
 .chip.ok { color: #4ade80; background: rgba(31, 157, 85, .18); border-color: transparent; }
-.thread { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: 0; }
+.thread { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; opacity: 0; transition: opacity .3s ease; }
+.thread.on { opacity: 1; transition: opacity .6s ease .6s; }   /* drawn once the panel has landed */
 .thread path { fill: none; stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 3 7; filter: drop-shadow(0 0 4px rgba(63, 169, 245, .9)); animation: flow 1.2s linear infinite; }
 .panel.linked { border-color: var(--blue); box-shadow: 0 20px 60px rgba(0, 8, 24, .45), 0 0 44px rgba(63, 169, 245, .35), inset 0 1px 0 rgba(255, 255, 255, .12); }
 .panel.linked .panel-row { background: rgba(63, 169, 245, .24); }
@@ -91,7 +100,14 @@ main { position: relative; z-index: 2; }
 .thread.linked path { stroke-width: 2.5; }
 .thread circle { fill: #cfe8ff; filter: drop-shadow(0 0 6px rgba(63, 169, 245, 1)); }
 @keyframes flow { to { stroke-dashoffset: -20; } }
-@media (prefers-reduced-motion: reduce) { .thread path { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .thread path { animation: none; } .ov > *, .panel { transform: none; filter: none; } }
+
+/* ---------- Autoplay ---------- */
+.topbar-actions { display: flex; gap: 10px; }
+.play { gap: 10px; cursor: pointer; }
+.play svg { width: 14px; height: 14px; fill: currentColor; }
+.play .i-pause, .play.on .i-play { display: none; }
+.play.on .i-pause { display: block; }
 
 /* ---------- Loading screen ---------- */
 .loader { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; align-content: center; gap: 22px; background: #050a14; transition: opacity .9s var(--ease), visibility .9s; animation: loader-out .6s 10s forwards; }
@@ -105,6 +121,8 @@ main { position: relative; z-index: 2; }
 
 @media (max-width: 820px) {
   .brand span { display: none; }
+  .play span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }   /* icon only, still named for screen readers */
+  .play { padding: 0 16px; }
   .hero-copy { max-width: none; right: var(--pad); bottom: 9svh; }
   .cue { display: none; }
   .ov { bottom: 24px; }

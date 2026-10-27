@@ -46,7 +46,7 @@ export function createParcel() {
     group.visible = vis > .001;
     if (!group.visible) { fresh = true; return; }
     box.position.copy(at);
-    box.rotation.set(time * 2.1, time * 1.4, 0);
+    box.rotation.set(time * .5, time * .35, 0);
     box.scale.setScalar(.3 + .7 * vis);
     box.material.opacity = tail.material.opacity = vis;
     if (fresh) { history.forEach(h => h.copy(at)); fresh = false; }
@@ -66,7 +66,7 @@ export function createParcel() {
 /** A raised arc between two points, high above the dust: k 0 … 1 along it, into out. */
 export function arc(from, to, k, out) {
   const mid = from.clone().lerp(to, .5);
-  mid.y += 5 + from.distanceTo(to) * .12;
+  mid.y += 3 + from.distanceTo(to) * .08;
   const e = k * k * (3 - 2 * k), u = 1 - e;
   return out.copy(from).multiplyScalar(u * u).addScaledVector(mid, 2 * u * e).addScaledVector(to, e * e);
 }

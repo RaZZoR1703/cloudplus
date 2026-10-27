@@ -62,17 +62,19 @@ const CLOUD = v(0, .6, 0), CORE = v(0, 1.6, 0);
 const EXIT = { cloud: CLOUD, production: v(7, .9, 3.4), warehouse: v(3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6), company: CORE };
 const ENTRY = { production: v(0, 1.6, 2.6), warehouse: v(-3.3, 1.5, 2.6), distribution: v(5.2, 2.4, 0), retail: v(0, 1.3, 1.6), company: CORE, outro: CORE };
 const cube = new THREE.Vector3();
-let handing = false;   // set when this frame runs a hand-over; otherwise the cube is hidden
+let handing = false, carry = 0;   // set when this frame runs a hand-over (otherwise the cube is hidden), and how visible the cube is
 /** Shape `name` standing still at its place. */
 function settle(name) { river.show(name, name, 1, PLACE[name], PLACE[name], PLACE[name]); }
 /** The hand-over from one business to the next at q (0 … 1); returns how far the camera should have moved (0 … 1). */
 function handover(from, to, q, t) {
   const A = EXIT[from].clone().add(PLACE[from]), B = ENTRY[to].clone().add(PLACE[to]);
   handing = true;
-  arc(A, B, smooth(.32, .68, q), cube);
+  // arc() eases once over a wide window: easing twice made the cube dart through the middle.
+  arc(A, B, Math.min(1, Math.max(0, (q - .26) / .48)), cube);
   river.show(from, to, q, PLACE[from], PLACE[to], cube);
-  parcel.update(cube, smooth(.18, .32, q) * (1 - smooth(.68, .82, q)), t);
-  return smooth(.22, .78, q);
+  carry = smooth(.14, .3, q) * (1 - smooth(.7, .86, q));
+  parcel.update(cube, carry, t);
+  return smooth(.2, .8, q);
 }
 const mixPose = (a, b, k) => ({ pos: a.pos.lerp(b.pos, k), look: a.look.lerp(b.look, k) });
 
@@ -99,8 +101,8 @@ composer.addPass(grade);
 composer.addPass(new OutputPass());
 
 // ---------- Scroll: which section, and how far through it ----------
-if (!still) {
-  const lenis = new Lenis({ lerp: .085 });
+const lenis = still ? null : new Lenis({ lerp: .085 });
+if (lenis) {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add(t => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
@@ -204,7 +206,7 @@ for (const { el } of Object.values(panels)) {
 }
 function updatePanel(key, amount, t) {
   const panel = panels[key];
-  thread.style.opacity = panel ? amount : 0;
+  thread.classList.toggle('on', !!panel && amount > .5);
   hotAmt += ((panel && amount > .5 && linked ? 1 : 0) - hotAmt) * .12;
   river.uniforms.uHotAmt.value = still ? (linked ? 1 : 0) * Number(!!panel) : hotAmt;
   if (panel) river.uniforms.uHot.value = Number(panel.el.dataset.hot);
@@ -231,14 +233,10 @@ function updatePanel(key, amount, t) {
 }
 
 // ---------- Chapter overlays ----------
+// The scroll only says which copy is on; CSS plays the fade on its own clock, so it never stalls half-shown.
 const overlays = [...document.querySelectorAll('[data-overlay]')];
 function showOverlay(key, amount) {
-  for (const o of overlays) {
-    const on = o.dataset.overlay === key ? amount : 0;
-    o.style.opacity = on;
-    o.style.visibility = on > .01 ? 'visible' : 'hidden';
-    o.style.transform = `translateY(${(1 - on) * 18}px)`;
-  }
+  for (const o of overlays) o.classList.toggle('on', o.dataset.overlay === key && amount > .5);
 }
 
 // ---------- Configurator: the visitor picks modules, the cloud builds from them ----------
@@ -262,6 +260,21 @@ document.querySelectorAll('[data-module]').forEach(btn => {
   });
 });
 renderConfig();
+
+// ---------- Autoplay: the page scrolls itself through the story; any wheel, touch or key hands it back ----------
+const playBtn = document.querySelector('.play'), playLabel = playBtn.querySelector('span');
+const auto = { on: false, y: 0 };
+const maxY = () => document.documentElement.scrollHeight - innerHeight;
+function setAuto(on) {
+  auto.on = on;
+  if (on) auto.y = scrollY >= maxY() - 2 ? 0 : scrollY;   // from the end, start over
+  playBtn.classList.toggle('on', on);
+  playLabel.textContent = on ? 'Пауза' : 'Смотреть историю';
+}
+if (still) playBtn.hidden = true;   // reduced motion: no scene to watch play
+playBtn.addEventListener('click', () => setAuto(!auto.on));
+const stopAuto = e => { if (auto.on && !(e.type === 'keydown' && playBtn.contains(e.target))) setAuto(false); };   // Enter or Space on the button is its own click
+for (const type of ['wheel', 'touchstart', 'keydown']) addEventListener(type, stopAuto, { passive: true });
 
 // ---------- Loading: the screen lifts once fonts are in and the first frames are drawn ----------
 let readyAt = -1;
@@ -304,7 +317,8 @@ let first = true;
 gsap.ticker.add(time => {
   const t = still ? 0 : time;
   watchFrames(time);
-  softY = still ? scrollY : softY + (scrollY - softY) * (1 - Math.exp(-(time - softAt) * 3.5));
+  const dt = Math.min(.1, time - softAt);
+  softY = still ? scrollY : softY + (scrollY - softY) * (1 - Math.exp(-dt * 3.5));
   softAt = time;
   lean.x += (pointer.x - lean.x) * .04;
   lean.y += (pointer.y - lean.y) * .04;
@@ -335,13 +349,13 @@ gsap.ticker.add(time => {
       target = orbitPose(idx ? (w.p - .5) / .5 : w.p, turns[idx], place);
     }
     overlayKey = w.key;
-    overlayAmt = (idx ? smooth(.52, .62, w.p) : smooth(.1, .2, w.p)) * (1 - smooth(.9, .98, w.p));
+    overlayAmt = (idx ? w.p > .42 : w.p > .06) && w.p < .94 ? 1 : 0;   // on as the cube bursts, off as the next hand-over starts
   } else if (w.phase === 'configure') {
     // The sale goes back to the program: the shop hands the cube to the core of the visitor's company.
     if (w.p < .4) target = mixPose(orbitPose(1, turns[3], PLACE.retail), companyPose(0), handover('retail', 'company', w.p / .4, t));
     else { settle('company'); target = companyPose((w.p - .4) / .6); }
     overlayKey = 'configure';
-    overlayAmt = smooth(.42, .52, w.p) * (1 - smooth(.92, .99, w.p));
+    overlayAmt = w.p > .36 && w.p < .96 ? 1 : 0;
   } else {
     // Finale: the company is drawn into the cube at its core, which flares and opens into the Cloudplus mark.
     const q = smooth(0, .7, w.p), c = PLACE.outro;
@@ -349,13 +363,23 @@ gsap.ticker.add(time => {
     offset *= 1 - smooth(.2, .7, q);
     flash = Math.exp(-(((q - .5) / .07) ** 2)) * 2.5;
     overlayKey = 'outro';
-    overlayAmt = smooth(.75, .9, w.p);
+    overlayAmt = w.p > .74 ? 1 : 0;
   }
 
+  if (auto.on) {
+    // Slower while copy is on screen, so it can be read; quicker through the flights between.
+    const rate = w.phase === 'hero' || w.phase === 'descend' ? .4 : overlayAmt && w.phase === 'chapter' ? .16 : .26;   // screens per second
+    auto.y = Math.min(maxY(), auto.y + innerHeight * rate * dt);
+    if (auto.y >= maxY()) setAuto(false);
+    lenis.scrollTo(auto.y, { immediate: true });
+  }
+  // In flight the camera's gaze leans towards the cube, so it glides along with the order.
+  if (handing) target.look.lerp(cube, .35 * carry);
   // Ease the camera towards its target: the scroll is already smoothed, this removes jitter.
   if (first) { camPos.copy(target.pos); camLook.copy(target.look); first = false; }
-  camPos.lerp(target.pos, still ? 1 : .12);
-  camLook.lerp(target.look, still ? 1 : .12);
+  const ease = still ? 1 : 1 - Math.exp(-dt * 4.5);
+  camPos.lerp(target.pos, ease);
+  camLook.lerp(target.look, ease);
   camera.position.copy(camPos);
   camera.up.copy(Y);
   camera.lookAt(camLook);
