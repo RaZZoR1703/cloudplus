@@ -192,6 +192,26 @@ function showOverlay(key, amount) {
   }
 }
 
+// ---------- Configurator: the visitor picks modules, the cloud builds from them ----------
+const chosen = new Set([0, 1, 3]), picked = [1, 1, 0, 1, 0, 0];
+const plural = n => (n % 10 === 1 && n % 100 !== 11 ? 'модуль' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'модуля' : 'модулей');
+const configCount = document.querySelector('[data-config-count]'), configCta = document.querySelector('[data-config-cta]');
+function renderConfig() {
+  const names = [...chosen].sort().map(i => cloud.names[i]);
+  configCount.textContent = names.length ? `В сборке ${names.length} ${plural(names.length)}` : 'Отметьте хотя бы один модуль';
+  configCta.href = `https://cloudplus.uz/?modules=${encodeURIComponent(names.join(', '))}`;
+}
+document.querySelectorAll('[data-module]').forEach(btn => {
+  const i = Number(btn.dataset.module);
+  btn.setAttribute('aria-pressed', chosen.has(i));
+  btn.addEventListener('click', () => {
+    chosen.has(i) ? chosen.delete(i) : chosen.add(i);
+    btn.setAttribute('aria-pressed', chosen.has(i));
+    renderConfig();
+  });
+});
+renderConfig();
+
 // ---------- Loading: the screen lifts once fonts are in and the first frames are drawn ----------
 let readyAt = -1;
 const loader = document.querySelector('.loader');
@@ -239,7 +259,7 @@ gsap.ticker.add(time => {
   lean.y += (pointer.y - lean.y) * .04;
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
-  let target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  let modules = null, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
@@ -258,11 +278,23 @@ gsap.ticker.add(time => {
     river.show(SHAPES[Math.max(0, idx - 1)], w.key, idx ? smooth(0, .5, w.p) : 1);
     overlayKey = w.key;
     overlayAmt = smooth(.4, .52, w.p) * (1 - smooth(.9, .98, w.p));
+  } else if (w.phase === 'configure') {
+    // Back to the glass cloud: the shop's particles gather into its shape, then glass takes over.
+    target = heroPose(0, t); offset = 0;
+    if (small) target.look.y -= 3.4;   // on phones the cloud rides above the module buttons
+    const k = smooth(0, .35, w.p);
+    explode = 1 - k; reveal = 1 - smooth(.15, .4, w.p);
+    river.show('retail', 'cloud', smooth(0, .3, w.p));
+    modules = picked;
+    overlayKey = 'configure';
+    overlayAmt = smooth(.3, .42, w.p) * (1 - smooth(.92, .99, w.p));
   } else {
-    const o = orbitPose(1, turns[3]), k = smooth(0, .6, w.p);
+    // The cloud shatters again; its dust writes the wordmark.
+    explode = smooth(0, .3, w.p); reveal = smooth(0, .2, w.p); modules = picked;
+    const o = heroPose(0, t), k = smooth(0, .6, w.p);
     target = { pos: o.pos.lerp(new THREE.Vector3(0, 3, small ? 40 : 30), k), look: o.look.lerp(new THREE.Vector3(0, small ? -2 : -.5, 0), k) };   // the wordmark rides high, above the closing copy
-    offset *= 1 - k;
-    river.show('retail', 'outro', smooth(0, .5, w.p));
+    offset = 0;
+    river.show('cloud', 'outro', smooth(.1, .55, w.p));
     overlayKey = 'outro';
     overlayAmt = smooth(.55, .75, w.p);
   }
@@ -278,10 +310,11 @@ gsap.ticker.add(time => {
   camera.filmOffset += (offset - camera.filmOffset) * (still ? 1 : .08);
   camera.updateProjectionMatrix();
 
-  cloud.group.visible = w.phase === 'hero' && explode < .999;   // by then every block has shrunk to nothing
+  cloud.group.visible = (w.phase === 'hero' || w.phase === 'configure' || w.phase === 'outro') && explode < .999;   // past that every block has shrunk to nothing
   cloud.group.rotation.y = Math.sin(t * .11) * .12;
   // The cloud builds itself only once the loading screen has lifted.
-  cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean);
+  for (let i = 0; i < 6; i++) picked[i] += ((chosen.has(i) ? 1 : 0) - picked[i]) * (still ? 1 : .08);
+  cloud.update(explode, readyAt < 0 ? 0 : still ? t : t - readyAt, still ? undefined : lean, modules);
   const u = river.uniforms;
   u.uTime.value = t;
   u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
