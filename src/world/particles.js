@@ -357,9 +357,10 @@ void main() {
   // The part the live panel talks about lights up while either is pointed at; the rest steps back.
   float hot = uHotAmt * (abs(group - uHot) < .5 ? 1. : -.45);
   vAlpha *= 1. + hot * .85;
-  gl_PointSize *= 1. + max(hot, 0.) * .35;
+  gl_PointSize = min(gl_PointSize * (1. + max(hot, 0.) * .35), uSize * .4);   // a speck by the lens would fill half the screen, near invisible
   vGlow = max(max(edge, aRand * aRand), hot);
   if (aRand > uDensity) gl_PointSize = 0.;   // weaker devices draw a share of the particles, a little brighter
+  if (vAlpha < .004) gl_PointSize = 0.;   // unseen (an unpicked module waits in the core): don't blend it thousands of times
   gl_Position = projectionMatrix * mv;
 }`;
 const fragmentShader = /* glsl */`
@@ -436,7 +437,7 @@ void main() {
   }
   vec4 mv = modelViewMatrix * vec4(p, 1.);
   float blur = clamp(abs(-mv.z - uFocus) * .035, 0., 1.);
-  gl_PointSize = uSize * (1. + blur * 2.2) / -mv.z;
+  gl_PointSize = min(uSize * (1. + blur * 2.2) / -mv.z, uSize * .4);
   vAlpha *= uReveal / (1. + blur * 3.);
   if (aSeed.w > uDensity) gl_PointSize = 0.;
   gl_Position = projectionMatrix * mv;

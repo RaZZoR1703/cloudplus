@@ -22,7 +22,8 @@ const lerp = THREE.MathUtils.lerp;
 // ---------- Renderer, scene, camera ----------
 const canvas = document.querySelector('#world');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.6));
+renderer.setPixelRatio(Math.min(devicePixelRatio, small ? 1.5 : 1.25));   // the glow and grain hide the difference; the fill rate does not
+renderer.transmissionResolutionScale = .5;   // the glass is frosted: its refraction can be soft
 renderer.toneMapping = THREE.AgXToneMapping;
 renderer.toneMappingExposure = .95;
 
@@ -79,11 +80,13 @@ function handover(from, to, q, t) {
 const mixPose = (a, b, k) => ({ pos: a.pos.lerp(b.pos, k), look: a.look.lerp(b.look, k) });
 
 // ---------- Post ----------
-const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+const target = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 2 });
 const composer = new EffectComposer(renderer, target);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), .3, .45, 1);
 composer.addPass(bloom);
+const bloomSize = bloom.setSize.bind(bloom);
+bloom.setSize = (w, h) => bloomSize(w / 2, h / 2);   // a glow is blurry anyway: half the pixels to blur
 const grade = new ShaderPass({
   uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
   vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
@@ -294,7 +297,7 @@ const quality = { density: weak ? .6 : 1, steps: 0, frames: 0, slow: 0, last: 0 
 function watchFrames(time) {
   const dt = time - quality.last;
   quality.last = time;
-  if (readyAt < 0 || quality.steps >= 2 || time - readyAt < 1.5) return;
+  if (readyAt < 0 || quality.steps >= 2 || time - readyAt < 1.5 || location.search.includes('quality=fixed')) return;   // fixed: for measuring
   quality.frames++;
   if (dt > 1 / 40) quality.slow++;
   if (quality.frames < 90) return;
@@ -325,7 +328,7 @@ gsap.ticker.add(time => {
   lean.on += (pointer.on - lean.on) * .05;
   const w = where();
   handing = false;
-  let flash = 0, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
+  let flash = 0, thin = 1, target, explode = 1, reveal = 1, offset = small ? 0 : -7, overlayKey = null, overlayAmt = 0;
 
   if (w.phase === 'hero') {
     target = heroPose(w.p, t); explode = target.explode; offset = 0;
@@ -362,6 +365,7 @@ gsap.ticker.add(time => {
     target = mixPose(companyPose(1), { pos: v(0, 3, small ? 40 : 30).add(c), look: v(0, small ? -2 : -.5, 0).add(c) }, handover('company', 'outro', q, t));   // the mark rides high, above the closing copy
     offset *= 1 - smooth(.2, .7, q);
     flash = Math.exp(-(((q - .5) / .07) ** 2)) * 2.5;
+    thin = 1 - .5 * smooth(.4, .55, q);   // the mark is small: half the dust, a little brighter, drawn far faster; the flash hides the switch
     overlayKey = 'outro';
     overlayAmt = w.p > .74 ? 1 : 0;
   }
@@ -396,8 +400,10 @@ gsap.ticker.add(time => {
   if (!handing) parcel.update(cube, 0, t);
   const u = river.uniforms;
   u.uTime.value = t;
-  u.uDensity.value = ambience.uniforms.uDensity.value = quality.density;
+  u.uDensity.value = quality.density * thin;
+  ambience.uniforms.uDensity.value = quality.density;
   u.uReveal.value = reveal;
+  river.points.visible = reveal > .001;   // before the glass breaks the dust is transparent: skip drawing it
   u.uFocus.value = camPos.distanceTo(camLook);
   u.uSize.value = (small ? 70 : 60) * renderer.getPixelRatio() * innerHeight / 900;
   // The pointer's place in the scene, on the plane through the shape facing the camera.

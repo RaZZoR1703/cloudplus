@@ -5,7 +5,8 @@ const NOISE = `
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123); }
   float noise(vec2 p){ vec2 i = floor(p), f = fract(p); vec2 u = f*f*(3.-2.*f);
     return mix(mix(hash(i), hash(i+vec2(1,0)), u.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y); }
-  float fbm(vec2 p){ float v = 0., a = .5; for (int i = 0; i < 6; i++){ v += a * noise(p); p = p * 2.02 + 17.; a *= .5; } return v; }`;
+  float fbm(vec2 p, int octaves){ float v = 0., a = .5; for (int i = 0; i < 6; i++){ if (i >= octaves) break; v += a * noise(p); p = p * 2.02 + 17.; a *= .5; } return v; }
+  float fbm(vec2 p){ return fbm(p, 6); }`;
 
 export const PALETTE = {
   zenith: new THREE.Color('#03060d'),
@@ -52,7 +53,7 @@ export function createCloudSea() {
     fragmentShader: `uniform float uTime, uLift; uniform vec3 uHorizon, uLight; varying vec3 vPos; ${NOISE}
       void main(){
         vec2 p = vPos.xz * .045 + vec2(uTime * .006, uTime * .003);
-        float n = fbm(p) * .65 + fbm(p * 2.7 - uTime * .01) * .35;
+        float n = fbm(p, 4) * .65 + fbm(p * 2.7 - uTime * .01, 3) * .35;   // finer octaves blur away at this distance; the sea fills the screen from above
         float tops = smoothstep(.42, .72, n);
         // Light pooled under the block cloud, falling off with distance.
         float d = length(vPos.xz - vec2(0., -1.));

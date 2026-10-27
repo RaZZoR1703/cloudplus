@@ -134,7 +134,7 @@ export function makeGlass() {
   const glass = new THREE.MeshPhysicalMaterial({
     // Frosted ice: milky, lit from within, with crisp clear-coat highlights on the edges.
     color: '#eef6ff', roughness: .46, metalness: 0,
-    transmission: .84, thickness: .45, ior: 1.31, dispersion: .35,
+    transmission: .84, thickness: .45, ior: 1.31,   // no dispersion: it triples the transmission samples, unseen through frost
     attenuationColor: '#9fd0ff', attenuationDistance: 1.6,
     clearcoat: 1, clearcoatRoughness: .1,
     emissive: '#5aa8ef', emissiveIntensity: .08,
@@ -183,6 +183,8 @@ export function createBlockCloud({ animateIn = true } = {}) {
           tint: rand() * .05,
         });
       }
+  // Front blocks first: the camera stays in front, so the depth test skips the costly glass hidden behind them.
+  blocks.sort((a, b) => b.base.z - a.base.z);
   const far = Math.max(...blocks.map(b => b.dist));
   for (const b of blocks) {
     b.out = b.dist / far;
