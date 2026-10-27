@@ -6,6 +6,18 @@
   <title>Cloudplus — программа, собранная под ваш бизнес</title>
   <meta name="description" content="Cloudplus собирает программу под ваш бизнес из нужных модулей: склад, касса, финансы, продажи, производство. Рабочая версия через 14 дней.">
   <meta name="theme-color" content="#050a14">
+  <!-- Link previews (Telegram, WhatsApp, Facebook, X): absolute URLs, as the crawlers need -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:site_name" content="Cloudplus">
+  <meta property="og:url" content="https://razzor1703.github.io/cloudplus/">
+  <meta property="og:title" content="Cloudplus — программа, собранная под ваш бизнес">
+  <meta property="og:description" content="Склад, касса, финансы, продажи и производство в одной программе. Рабочая версия на ваших данных через 14 дней.">
+  <meta property="og:image" content="https://razzor1703.github.io/cloudplus/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Облако из модулей программы Cloudplus с живыми экранами: касса, склад, продажи">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="./mark-blue.svg" type="image/svg+xml">
   <link rel="preload" href="./fonts/onest-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="./src/world/style.css">
@@ -20,7 +32,7 @@
         <svg class="i-pause" viewBox="0 0 14 14" aria-hidden="true"><path d="M2.5 1.5h3v11h-3zM8.5 1.5h3v11h-3z"/></svg>
         <span>Смотреть историю</span>
       </button>
-      <a class="pill" href="https://cloudplus.uz/">Узнать стоимость</a>
+      <a class="pill" href="https://cloudplus.uz/" data-goal="topbar">Узнать стоимость</a>
     </div>
   </header>
 
@@ -82,12 +94,12 @@
         <button type="button" data-module="2">Обмен с&nbsp;1С</button>
       </div>
       <p class="config-count" data-config-count aria-live="polite"></p>
-      <a class="cta" data-config-cta href="https://cloudplus.uz/">Узнать стоимость сборки</a>
+      <a class="cta" data-config-cta data-goal="configurator" href="https://cloudplus.uz/">Узнать стоимость сборки</a>
     </article>
     <article class="ov ov-outro" data-overlay="outro">
       <h2>Вся компания в&nbsp;одной программе</h2>
       <p class="ov-say">Рабочая версия на&nbsp;ваших данных через 14&nbsp;дней. Цена в&nbsp;договоре, исходный код у&nbsp;вас.</p>
-      <a class="cta" href="https://cloudplus.uz/">Узнать стоимость</a>
+      <a class="cta" href="https://cloudplus.uz/" data-goal="finale">Узнать стоимость</a>
     </article>
   </div>
 
@@ -111,5 +123,18 @@
   </main>
 
   <script type="module" src="./src/world/main.js"></script>
+  <!-- Yandex.Metrika: the cloudplus.uz counter. No webvisor here: the scene rewrites the DOM every frame. -->
+  <script>
+    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();
+    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+    ym(109339572, "init", { clickmap: true, trackLinks: true, accurateTrackBounce: true });
+    // Goal "price_request": any «Узнать стоимость» button; place says which one, modules what was picked.
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[data-goal]');
+      if (a) ym(109339572, 'reachGoal', 'price_request', { place: a.dataset.goal, modules: new URL(a.href).searchParams.get('modules') || '' });
+    });
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/109339572" style="position:absolute; left:-9999px;" alt=""></div></noscript>
 </body>
 </html>
